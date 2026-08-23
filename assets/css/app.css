@@ -41,6 +41,8 @@
 .spd-brand-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); color: #1a1408; display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .spd-brand-title { font-weight: 600; font-size: 14px; }
 .spd-brand-sub { font-size: 11px; color: var(--text-dim); }
+.spd-back-link { display: block; font-size: 12px; color: var(--text-dim); text-decoration: none; padding: 6px 10px 16px; }
+.spd-back-link:hover { color: var(--accent); }
 
 .spd-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .spd-nav a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--text-dim); text-decoration: none; font-size: 13.5px; }

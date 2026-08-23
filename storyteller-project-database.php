@@ -23,6 +23,7 @@ require_once SPD_PLUGIN_DIR . 'includes/class-beat-templates.php';
 require_once SPD_PLUGIN_DIR . 'includes/class-rest-api.php';
 require_once SPD_PLUGIN_DIR . 'includes/class-exports.php';
 require_once SPD_PLUGIN_DIR . 'includes/class-admin-page.php';
+require_once SPD_PLUGIN_DIR . 'includes/class-public-site.php';
 
 /**
  * Boots the plugin's pieces. Order matters only for the CPT registration
@@ -35,6 +36,7 @@ final class Storyteller_Project_Database {
 		SPD_REST_API::init();
 		SPD_Exports::init();
 		SPD_Admin_Page::init();
+		SPD_Public_Site::init();
 	}
 }
 
@@ -42,6 +44,7 @@ add_action( 'plugins_loaded', array( 'Storyteller_Project_Database', 'init' ) );
 
 register_activation_hook( __FILE__, function () {
 	SPD_Post_Types::register_post_types();
+	SPD_Public_Site::register_rewrites();
 	flush_rewrite_rules();
 } );
 

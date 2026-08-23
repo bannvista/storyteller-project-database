@@ -44,6 +44,8 @@ class SPD_Admin_Page {
 			'exportNonce'     => wp_create_nonce( 'spd_export_onesheet' ),
 			'homeUrl'         => home_url( '/' ),
 			'userDisplayName' => wp_get_current_user()->display_name,
+			'backUrl'         => admin_url(),
+			'backLabel'       => 'Back to WP Admin',
 		) );
 
 		// Hide the standard wp-admin chrome on this page so the app can

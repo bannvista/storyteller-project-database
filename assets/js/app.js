@@ -120,6 +120,7 @@
 		root.innerHTML =
 			'<div class="spd-sidebar">' +
 				'<div class="spd-brand"><div class="spd-brand-icon">🎬</div><div><div class="spd-brand-title">Project Database</div><div class="spd-brand-sub">for Storytellers</div></div></div>' +
+				( SPD.backUrl ? '<a class="spd-back-link" href="' + esc( SPD.backUrl ) + '">← ' + esc( SPD.backLabel || 'Back' ) + '</a>' : '' ) +
 				'<div class="spd-nav">' + navHtml + '</div>' +
 				'<div class="spd-sidebar-footer"><div class="spd-avatar">' + esc( initials( SPD.userDisplayName ) ) + '</div>' +
 				'<div><div class="spd-sidebar-footer-name">' + esc( SPD.userDisplayName ) + '</div><div class="spd-sidebar-footer-role">Screenwriter</div></div></div>' +

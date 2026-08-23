@@ -480,27 +480,35 @@ class SPD_REST_API {
 	/* Billing (display only — no payment processing)                   */
 	/* ---------------------------------------------------------------- */
 
+	/**
+	 * Shared with SPD_Public_Site so the marketing homepage's pricing
+	 * section always matches what the Billing screen shows.
+	 */
+	public static function plans_data() {
+		return array(
+			array(
+				'id'       => 'creator_free',
+				'name'     => 'Creator — Free',
+				'price'    => 0,
+				'period'   => '',
+				'features' => array( 'Up to 5 projects', 'Logline builder', 'Community access', 'Basic character profiles', 'Beat sheet calculator' ),
+			),
+			array(
+				'id'       => 'pro',
+				'name'     => 'Pro',
+				'price'    => 8,
+				'period'   => '/mo',
+				'features' => array( 'Unlimited projects', 'Creative IP record', 'Advanced exports', 'Priority support' ),
+			),
+		);
+	}
+
 	public static function get_billing() {
 		$plan_id = get_option( 'spd_billing_plan', 'creator_free' );
 
 		return rest_ensure_response( array(
-			'current_plan' => $plan_id,
-			'plans'        => array(
-				array(
-					'id'       => 'creator_free',
-					'name'     => 'Creator — Free',
-					'price'    => 0,
-					'period'   => '',
-					'features' => array( 'Up to 5 projects', 'Logline builder', 'Community access', 'Basic character profiles', 'Beat sheet calculator' ),
-				),
-				array(
-					'id'       => 'pro',
-					'name'     => 'Pro',
-					'price'    => 8,
-					'period'   => '/mo',
-					'features' => array( 'Unlimited projects', 'Creative IP record', 'Advanced exports', 'Priority support' ),
-				),
-			),
+			'current_plan'   => $plan_id,
+			'plans'          => self::plans_data(),
 			'payment_method' => null,
 			'note'           => 'Billing is informational only in this build — no payment processing is connected.',
 		) );
