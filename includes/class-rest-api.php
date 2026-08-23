@@ -16,7 +16,7 @@ class SPD_REST_API {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 	}
 
-	private static function can_manage() {
+	public static function can_manage() {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -181,6 +181,23 @@ class SPD_REST_API {
 		return null === $val ? $default : sanitize_textarea_field( $val );
 	}
 
+	/**
+	 * Writes a meta value only when the request actually included that
+	 * field, so a partial PUT (e.g. linking a franchise from the
+	 * Projects list) never silently resets fields the request didn't
+	 * touch back to a hardcoded default.
+	 */
+	private static function maybe_update_meta( $id, $request, $key, $meta_key, $sanitizer = null ) {
+		$val = $request->get_param( $key );
+		if ( null === $val ) {
+			return;
+		}
+		if ( $sanitizer ) {
+			$val = call_user_func( $sanitizer, $val );
+		}
+		update_post_meta( $id, $meta_key, $val );
+	}
+
 	/* ---------------------------------------------------------------- */
 	/* Projects                                                          */
 	/* ---------------------------------------------------------------- */
@@ -203,14 +220,14 @@ class SPD_REST_API {
 	}
 
 	public static function save_project( $id, $request ) {
-		update_post_meta( $id, 'spd_type', self::str_param( $request, 'type', 'feature' ) );
-		update_post_meta( $id, 'spd_stage', self::str_param( $request, 'stage', 'idea' ) );
-		update_post_meta( $id, 'spd_logline', self::text_param( $request, 'logline' ) );
-		update_post_meta( $id, 'spd_synopsis', self::text_param( $request, 'synopsis' ) );
-		update_post_meta( $id, 'spd_progress', max( 0, min( 100, (int) $request->get_param( 'progress' ) ) ) );
-		update_post_meta( $id, 'spd_franchise_id', (int) $request->get_param( 'franchise_id' ) );
-		update_post_meta( $id, 'spd_total_pages', max( 1, (int) ( $request->get_param( 'total_pages' ) ?: 100 ) ) );
-		update_post_meta( $id, 'spd_beat_template', self::str_param( $request, 'beat_template', 'save_the_cat' ) );
+		self::maybe_update_meta( $id, $request, 'type', 'spd_type', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'stage', 'spd_stage', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'logline', 'spd_logline', 'sanitize_textarea_field' );
+		self::maybe_update_meta( $id, $request, 'synopsis', 'spd_synopsis', 'sanitize_textarea_field' );
+		self::maybe_update_meta( $id, $request, 'progress', 'spd_progress', function ( $v ) { return max( 0, min( 100, (int) $v ) ); } );
+		self::maybe_update_meta( $id, $request, 'franchise_id', 'spd_franchise_id', 'intval' );
+		self::maybe_update_meta( $id, $request, 'total_pages', 'spd_total_pages', function ( $v ) { return max( 1, (int) $v ); } );
+		self::maybe_update_meta( $id, $request, 'beat_template', 'spd_beat_template', 'sanitize_text_field' );
 		if ( null !== $request->get_param( 'genres' ) ) {
 			self::meta_json_set( $id, 'spd_genres', (array) $request->get_param( 'genres' ) );
 		}
@@ -247,7 +264,7 @@ class SPD_REST_API {
 	}
 
 	public static function save_franchise( $id, $request ) {
-		update_post_meta( $id, 'spd_status', self::str_param( $request, 'status', 'development' ) );
+		self::maybe_update_meta( $id, $request, 'status', 'spd_status', 'sanitize_text_field' );
 		if ( null !== $request->get_param( 'description' ) ) {
 			wp_update_post( array( 'ID' => $id, 'post_content' => self::text_param( $request, 'description' ) ) );
 		}
@@ -274,9 +291,9 @@ class SPD_REST_API {
 	}
 
 	public static function save_character( $id, $request ) {
-		update_post_meta( $id, 'spd_role', self::str_param( $request, 'role', 'protagonist' ) );
-		update_post_meta( $id, 'spd_project_id', (int) $request->get_param( 'project_id' ) );
-		update_post_meta( $id, 'spd_arc', self::text_param( $request, 'arc' ) );
+		self::maybe_update_meta( $id, $request, 'role', 'spd_role', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'project_id', 'spd_project_id', 'intval' );
+		self::maybe_update_meta( $id, $request, 'arc', 'spd_arc', 'sanitize_textarea_field' );
 		if ( null !== $request->get_param( 'traits' ) ) {
 			self::meta_json_set( $id, 'spd_traits', (array) $request->get_param( 'traits' ) );
 		}

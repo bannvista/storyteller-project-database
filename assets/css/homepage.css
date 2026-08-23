@@ -27,7 +27,8 @@
 .spd-home-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 6vw; border-bottom: 1px solid var(--border); }
 .spd-home-brand { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
 .spd-home-brand-icon { font-size: 18px; }
-.spd-home-nav { display: flex; gap: 10px; }
+.spd-home-nav { display: flex; align-items: center; gap: 10px; }
+.spd-home-nav .nsl-container { display: inline-flex; }
 
 .spd-hero { max-width: 780px; margin: 0 auto; padding: 90px 6vw 50px; text-align: center; }
 .spd-hero h1 { font-family: var(--serif); font-size: clamp(32px, 5vw, 52px); line-height: 1.1; margin: 0 0 20px; text-wrap: balance; }

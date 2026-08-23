@@ -19,7 +19,8 @@ class SPD_Public_Site {
 	const BASE = 'storyteller-database';
 
 	public static function init() {
-		add_action( 'init', array( __CLASS__, 'register_rewrites' ) );
+		add_action( 'init', array( __CLASS__, 'register_rewrites' ), 10 );
+		add_action( 'init', array( __CLASS__, 'maybe_flush_rewrites' ), 20 );
 		add_filter( 'query_vars', array( __CLASS__, 'add_query_var' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ) );
 	}
@@ -27,6 +28,27 @@ class SPD_Public_Site {
 	public static function register_rewrites() {
 		add_rewrite_rule( '^' . self::BASE . '/demo/?$', 'index.php?spd_page=demo', 'top' );
 		add_rewrite_rule( '^' . self::BASE . '/?$', 'index.php?spd_page=home', 'top' );
+	}
+
+	/**
+	 * Rules added inside the activation hook itself don't reliably survive
+	 * flush_rewrite_rules() there — at that point in WordPress's plugin
+	 * lifecycle, this plugin's own 'init' hook (which is what actually
+	 * registers the rules above) hasn't necessarily run yet this request.
+	 * Deferring the flush to the very next normal `init` — after
+	 * register_rewrites() has run through the normal hook — is the
+	 * reliable fix and is transparent to the user (it happens on the
+	 * same redirect back to the plugins list after activating).
+	 */
+	public static function maybe_flush_rewrites() {
+		if ( get_option( 'spd_needs_rewrite_flush' ) ) {
+			flush_rewrite_rules();
+			delete_option( 'spd_needs_rewrite_flush' );
+		}
+	}
+
+	public static function schedule_flush() {
+		update_option( 'spd_needs_rewrite_flush', 1 );
 	}
 
 	public static function add_query_var( $vars ) {
@@ -81,7 +103,11 @@ class SPD_Public_Site {
 					<div class="spd-home-brand"><span class="spd-home-brand-icon">🎬</span> Project Database</div>
 					<nav class="spd-home-nav">
 						<a href="<?php echo $demo_url; ?>" class="spd-btn">Try the Demo</a>
-						<a href="<?php echo $signin_url; ?>" class="spd-btn spd-btn-primary">Sign In</a>
+						<?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
+							<?php echo do_shortcode( '[nextend_social_login provider="google" redirect="' . esc_attr( admin_url() ) . '"]' ); ?>
+						<?php else : ?>
+							<a href="<?php echo $signin_url; ?>" class="spd-btn spd-btn-primary">Sign In</a>
+						<?php endif; ?>
 					</nav>
 				</header>
 

@@ -45,6 +45,7 @@ add_action( 'plugins_loaded', array( 'Storyteller_Project_Database', 'init' ) );
 register_activation_hook( __FILE__, function () {
 	SPD_Post_Types::register_post_types();
 	SPD_Public_Site::register_rewrites();
+	SPD_Public_Site::schedule_flush();
 	flush_rewrite_rules();
 } );
 
