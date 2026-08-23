@@ -135,10 +135,10 @@ class SPD_Public_Site {
 			<!-- ACT 1 · Recognition — the dashboard, already populated. pin + count -->
 			<section id="dashboard" data-sc-act="pin" data-sc-span="2.2" data-sc-drift="#0b0b0d">
 				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center; gap:var(--sc-5);">
+					<p class="sample-note" style="margin-bottom:var(--sc-3)">Live sample data, this is the real dashboard, seeded for the demo</p>
 					<div class="sc-copy" data-sc-cue="0 0.7 0">
-						<p class="sample-note" style="margin-bottom:var(--sc-3)">Live sample data · this is the real dashboard, seeded for the demo</p>
 						<h1 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-2)">Good morning. Your library is already here.</h1>
-						<p class="sc-body">No empty state, no setup wizard — six projects, two franchises, four characters, already organized.</p>
+						<p class="sc-body">No empty state, no setup wizard: six projects, two franchises, four characters, already organized.</p>
 					</div>
 					<div class="stat-grid" data-sc-cue="0.1 0.85">
 						<div class="surface-card"><div class="stat-label">Total Projects</div><div class="stat-value"><span data-sc-count="0 6" data-sc-count-at="0.15 0.55">0</span></div></div>
@@ -153,7 +153,7 @@ class SPD_Public_Site {
 			<section class="sc-section" data-sc-act="flow" data-sc-drift="#101115">
 				<div class="sc-wrap">
 					<div class="sc-stack" data-sc-in style="margin-bottom:var(--sc-8)">
-						<h2 class="sc-display sc-display--md">Projects, franchises, and characters — actually linked.</h2>
+						<h2 class="sc-display sc-display--md">Projects, franchises, and characters: actually linked.</h2>
 						<p class="sc-body">Not three separate lists. A character points at a project, a project points at a franchise, and the franchise page shows every linked project back.</p>
 					</div>
 					<div class="db-row" data-sc-in data-sc-stagger="90">
@@ -180,8 +180,8 @@ class SPD_Public_Site {
 			<section id="beatsheet" data-sc-act="pin" data-sc-span="3.4" data-sc-drift="#0e0e12">
 				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center;">
 					<div class="beatsheet-panel">
+						<p class="sample-note" style="margin-bottom:var(--sc-2)">The real generator, not a mockup</p>
 						<div class="sc-copy" data-sc-cue="0 0.18 0">
-							<p class="sample-note" style="margin-bottom:var(--sc-2)">The real generator, not a mockup</p>
 							<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
 						</div>
 						<div class="beatsheet-head">
@@ -199,7 +199,7 @@ class SPD_Public_Site {
 					<div class="rail" data-sc-pan="0.05" style="display:flex; align-items:center; gap:var(--sc-5); padding-inline:var(--sc-gutter);">
 						<div class="rail__lead sc-stack" style="flex:0 0 260px;">
 							<h2 class="sc-display sc-display--md">Every file finds its place.</h2>
-							<p class="sc-body">Scripts, treatments, beat sheets, posters, research — imported once, attached to the right project.</p>
+							<p class="sc-body">Scripts, treatments, beat sheets, posters, research: imported once, attached to the right project.</p>
 						</div>
 						<article class="surface-card" data-sc-tilt="6"><div class="icon">📄</div><h3>Script</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.fdx, .pdf, .docx</p></article>
 						<article class="surface-card" data-sc-tilt="6"><div class="icon">📋</div><h3>Treatment</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.docx, .pdf</p></article>
@@ -253,7 +253,7 @@ class SPD_Public_Site {
 		<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Demo — Project Database</title>
+		<title>Demo: Project Database</title>
 		<?php echo self::demo_asset_tags(); ?>
 		<style>
 			.spd-demo-topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #0e0e10; border-bottom: 1px solid #2a2a2e; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10002; color: #f2f0ec; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; }
@@ -266,7 +266,7 @@ class SPD_Public_Site {
 		<body>
 			<div class="spd-demo-topbar">
 				<a href="<?php echo esc_url( self::home_url() ); ?>">← Back to homepage</a>
-				<span>Demo mode — sample data only, nothing you do here is saved</span>
+				<span>Demo mode (sample data only, nothing you do here is saved)</span>
 			</div>
 			<div id="spd-app" class="spd-app">Loading…</div>
 			<script>

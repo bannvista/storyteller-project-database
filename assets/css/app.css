@@ -2,6 +2,15 @@
 
 .spd-app, .spd-app * { box-sizing: border-box; }
 
+.spd-app a:focus-visible,
+.spd-app button:focus-visible,
+.spd-app input:focus-visible,
+.spd-app select:focus-visible,
+.spd-app textarea:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
 .spd-app {
 	--bg: #0b0b0d;
 	--panel: #17171a;
@@ -9,7 +18,7 @@
 	--border: #2a2a2e;
 	--text: #f2f0ec;
 	--text-dim: #9a9a9f;
-	--text-faint: #6b6b70;
+	--text-faint: #87878c; /* was #6b6b70 — that failed 4.5:1 on the small (11-12px) text it's used for */
 	--accent: #e3b077;
 	--accent-dim: #6b5636;
 	--danger: #d9534f;
@@ -55,6 +64,10 @@
 .spd-sidebar-footer-name { font-size: 13px; font-weight: 600; }
 .spd-sidebar-footer-role { font-size: 11px; color: var(--text-dim); }
 
+/* Mobile top bar + off-canvas nav (hidden on desktop; see the media query below) */
+.spd-mobile-topbar { display: none; }
+.spd-sidebar-backdrop { display: none; }
+
 /* Main */
 .spd-main { flex: 1; overflow-y: auto; padding: 36px 44px; }
 .spd-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; gap: 20px; flex-wrap: wrap; }
@@ -62,7 +75,7 @@
 .spd-subtitle { color: var(--text-dim); font-size: 14px; margin: 0; max-width: 520px; }
 
 /* Buttons */
-.spd-btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 10px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text); white-space: nowrap; }
+.spd-btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 10px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--panel); color: var(--text); white-space: nowrap; text-decoration: none; font-family: inherit; }
 .spd-btn:hover { background: var(--panel-2); }
 .spd-btn-primary { background: var(--accent); color: #1a1408; border-color: var(--accent); }
 .spd-btn-primary:hover { filter: brightness(1.08); }
@@ -89,7 +102,6 @@
 /* Toolbar (search/filter) */
 .spd-toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
 .spd-input, .spd-select, textarea.spd-input { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; font-family: var(--sans); }
-.spd-input:focus, .spd-select:focus { outline: 1px solid var(--accent); }
 .spd-search { flex: 1; min-width: 200px; }
 
 /* Item cards (projects/franchises/characters) */
@@ -159,7 +171,61 @@
 .spd-toast.error { border-color: var(--danger); color: #ffb4b1; }
 
 @media (max-width: 780px) {
-	.spd-sidebar { display: none; }
-	.spd-main { padding: 24px; }
+	.spd-app { flex-direction: column; }
+
+	.spd-mobile-topbar {
+		display: flex; align-items: center; gap: 12px;
+		height: 52px; flex-shrink: 0; padding: 0 16px;
+		border-bottom: 1px solid var(--border); background: #0e0e10;
+	}
+	.spd-menu-btn {
+		width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+		background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+		font-size: 18px; cursor: pointer; flex-shrink: 0;
+	}
+	.spd-menu-btn:hover { background: var(--panel); }
+	.spd-mobile-topbar-title { font-size: 14px; font-weight: 700; }
+
+	.spd-sidebar-backdrop {
+		/* absolute, not fixed: .spd-app is the positioned ancestor (and on the
+		   demo page it's offset below that page's own top bar via #spd-app.spd-app
+		   { top: 48px } in class-public-site.php) — fixed here would ignore
+		   that offset and paint over the demo's own bar instead of stopping
+		   below it. */
+		display: block; position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+		opacity: 0; pointer-events: none; transition: opacity var(--sc-d-base, 200ms) ease;
+		z-index: 10000;
+	}
+	.spd-sidebar-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+	.spd-sidebar {
+		position: absolute; top: 0; left: 0; bottom: 0; z-index: 10001;
+		transform: translateX(-100%);
+		transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+		box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+	}
+	.spd-sidebar.is-open { transform: translateX(0); }
+
+	.spd-main { padding: 20px; }
 	.spd-stats-grid { grid-template-columns: 1fr; }
+	.spd-header { flex-direction: column; align-items: stretch; }
+	.spd-header .spd-btn { width: 100%; justify-content: center; }
+	.spd-item-card-actions { flex-wrap: wrap; }
+	.spd-item-card-actions .spd-btn { flex: 1 1 auto; }
+	.spd-modal { max-width: 100%; }
+	.spd-field-row { flex-direction: column; gap: 0; }
+	/* A generic wide table (e.g. many columns of tabular data) would want
+	   overflow-x scroll, but this table's Description column is prose that
+	   needs to wrap, not truncate: table-layout:fixed + explicit widths lets
+	   Beat/Pg stay compact while Description wraps normally, no horizontal
+	   scroll needed. */
+	.spd-table { table-layout: fixed; font-size: 12.5px; }
+	.spd-table th, .spd-table td { padding: 8px 6px; word-wrap: break-word; }
+	.spd-table th:first-child, .spd-table td:first-child { width: 30%; }
+	.spd-table th:nth-child(2), .spd-table td.spd-page { width: 15%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.spd-sidebar { transition: none; }
+	.spd-sidebar-backdrop { transition: none; }
 }

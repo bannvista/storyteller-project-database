@@ -112,13 +112,19 @@
 
 	function shell( innerHtml ) {
 		var route = currentRoute();
+		var current = NAV_ITEMS.filter( function ( item ) { return item.route === route; } )[0] || NAV_ITEMS[0];
 		var navHtml = NAV_ITEMS.map( function ( item ) {
 			return '<a href="#/' + item.route + '" class="' + ( item.route === route ? 'active' : '' ) + '">' +
 				'<span class="spd-icon">' + item.icon + '</span>' + esc( item.label ) + '</a>';
 		} ).join( '' );
 
 		root.innerHTML =
-			'<div class="spd-sidebar">' +
+			'<div class="spd-mobile-topbar">' +
+				'<button type="button" class="spd-menu-btn" aria-label="Open navigation" aria-expanded="false"><span class="spd-icon">☰</span></button>' +
+				'<span class="spd-mobile-topbar-title">' + esc( current.label ) + '</span>' +
+			'</div>' +
+			'<div class="spd-sidebar-backdrop"></div>' +
+			'<div class="spd-sidebar" id="spd-sidebar">' +
 				'<div class="spd-brand"><div class="spd-brand-icon">🎬</div><div><div class="spd-brand-title">Project Database</div><div class="spd-brand-sub">for Storytellers</div></div></div>' +
 				( SPD.backUrl ? '<a class="spd-back-link" href="' + esc( SPD.backUrl ) + '">← ' + esc( SPD.backLabel || 'Back' ) + '</a>' : '' ) +
 				'<div class="spd-nav">' + navHtml + '</div>' +
@@ -126,6 +132,45 @@
 				'<div><div class="spd-sidebar-footer-name">' + esc( SPD.userDisplayName ) + '</div><div class="spd-sidebar-footer-role">Screenwriter</div></div></div>' +
 			'</div>' +
 			'<div class="spd-main">' + innerHtml + '</div>';
+
+		bindMobileNav();
+	}
+
+	function closeMobileNav() {
+		var sidebar = document.getElementById( 'spd-sidebar' );
+		var backdrop = root.querySelector( '.spd-sidebar-backdrop' );
+		var menuBtn = root.querySelector( '.spd-menu-btn' );
+		if ( sidebar ) { sidebar.classList.remove( 'is-open' ); }
+		if ( backdrop ) { backdrop.classList.remove( 'is-open' ); }
+		if ( menuBtn ) { menuBtn.setAttribute( 'aria-expanded', 'false' ); }
+	}
+
+	/* Mobile only: the sidebar becomes an off-canvas drawer, opened via the
+	   hamburger button in the mobile top bar and closed by the backdrop, the
+	   Escape key, or picking a nav item (so navigating always collapses it).
+	   Bound fresh each render since the shell's elements are recreated, but
+	   the Escape handler is attached once at the bottom of this file (a
+	   per-render document listener would stack up across route changes). */
+	function bindMobileNav() {
+		var sidebar = document.getElementById( 'spd-sidebar' );
+		var menuBtn = root.querySelector( '.spd-menu-btn' );
+		var backdrop = root.querySelector( '.spd-sidebar-backdrop' );
+
+		if ( menuBtn ) {
+			menuBtn.addEventListener( 'click', function () {
+				if ( sidebar.classList.contains( 'is-open' ) ) {
+					closeMobileNav();
+				} else {
+					sidebar.classList.add( 'is-open' );
+					backdrop.classList.add( 'is-open' );
+					menuBtn.setAttribute( 'aria-expanded', 'true' );
+				}
+			} );
+		}
+		backdrop.addEventListener( 'click', closeMobileNav );
+		sidebar.querySelectorAll( '.spd-nav a' ).forEach( function ( a ) {
+			a.addEventListener( 'click', closeMobileNav );
+		} );
 	}
 
 	/* ---------------------------------------------------------------- */
@@ -139,7 +184,11 @@
 			'<div class="spd-modal-actions"><button type="button" class="spd-btn" data-cancel>Cancel</button>' +
 			'<button type="submit" class="spd-btn spd-btn-primary">Save</button></div></form></div>';
 
-		document.body.appendChild( backdrop );
+		// Appended to root (#spd-app), not document.body: every color in this
+		// app is a CSS custom property defined on .spd-app itself, and those
+		// don't inherit to a sibling outside it — the modal would render with
+		// a fully transparent background otherwise.
+		root.appendChild( backdrop );
 
 		function close() { backdrop.remove(); }
 		backdrop.addEventListener( 'click', function ( e ) { if ( e.target === backdrop ) { close(); } } );
@@ -535,7 +584,7 @@
 				'<div class="spd-field"><label>Project</label><select class="spd-select" id="spd-bs-project">' + selectOptions( projects.map( function ( p ) { return { value: p.id, label: p.title }; } ), selectedId, function ( v ) { return v.label; } ) + '</select></div>' +
 				'<div class="spd-field-row">' +
 					'<div class="spd-field"><label>Total Pages</label><input class="spd-input" type="number" min="1" id="spd-bs-pages" value="' + ( project.total_pages || 100 ) + '"></div>' +
-					'<div class="spd-field"><label>Template</label><select class="spd-select" id="spd-bs-template">' + selectOptions( templates.map( function ( t ) { return { value: t.key, label: t.label }; } ), project.beat_template ) + '</select></div>' +
+					'<div class="spd-field"><label>Template</label><select class="spd-select" id="spd-bs-template">' + selectOptions( templates.map( function ( t ) { return { value: t.key, label: t.label }; } ), project.beat_template, function ( v ) { return v.label; } ) + '</select></div>' +
 				'</div>' +
 				'<button class="spd-btn spd-btn-primary" id="spd-bs-generate">Generate Beat Pages</button>' +
 			'</div>' +
@@ -777,6 +826,7 @@
 		( ROUTES[ name ] || renderDashboard )();
 	}
 
+	document.addEventListener( 'keydown', function ( e ) { if ( e.key === 'Escape' ) { closeMobileNav(); } } );
 	window.addEventListener( 'hashchange', route );
 	route();
 
