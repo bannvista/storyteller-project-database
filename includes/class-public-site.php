@@ -76,15 +76,22 @@ class SPD_Public_Site {
 		}
 	}
 
-	private static function asset_tags() {
+	private static function demo_asset_tags() {
 		return
-			'<link rel="stylesheet" href="' . esc_url( SPD_PLUGIN_URL . 'assets/css/app.css' ) . '?v=' . SPD_VERSION . '">' .
-			'<link rel="stylesheet" href="' . esc_url( SPD_PLUGIN_URL . 'assets/css/homepage.css' ) . '?v=' . SPD_VERSION . '">';
+			'<link rel="stylesheet" href="' . esc_url( SPD_PLUGIN_URL . 'assets/css/app.css' ) . '?v=' . SPD_VERSION . '">';
 	}
 
+	/**
+	 * The homepage is a scroll-driven "Live Surface" page built with the
+	 * scrollcraft engine (github.com/nateherkai/scroll-craft, MIT —
+	 * vendored unmodified in assets/*​/scrollcraft-engine.*, see
+	 * third-party-licenses/). The dashboard/database/beat-sheet content is
+	 * the same labelled sample data as the sandboxed demo — never the real
+	 * site owner's private records, since this page is public.
+	 */
 	public static function render_home() {
 		$plans      = SPD_REST_API::plans_data();
-		$demo_url   = esc_url( self::demo_url() );
+		$demo_url   = self::demo_url();
 		$signin_url = esc_url( wp_login_url() );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
@@ -93,59 +100,146 @@ class SPD_Public_Site {
 		<html lang="en">
 		<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Project Database — for Storytellers</title>
-		<?php echo self::asset_tags(); ?>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<title>Project Database · the story tool that already has your work in it</title>
+		<meta name="description" content="A project, character, and franchise database for storytellers, with a beat sheet that builds itself as you scroll.">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/scrollcraft-engine.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
+		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/homepage-scroll.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
 		</head>
-		<body class="spd-home-body">
-			<div class="spd-home">
-				<header class="spd-home-header">
-					<div class="spd-home-brand"><span class="spd-home-brand-icon">🎬</span> Project Database</div>
-					<nav class="spd-home-nav">
-						<a href="<?php echo $demo_url; ?>" class="spd-btn">Try the Demo</a>
-						<?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
-							<?php echo do_shortcode( '[nextend_social_login provider="google" redirect="' . esc_attr( admin_url() ) . '"]' ); ?>
-						<?php else : ?>
-							<a href="<?php echo $signin_url; ?>" class="spd-btn spd-btn-primary">Sign In</a>
-						<?php endif; ?>
-					</nav>
-				</header>
+		<body>
 
-				<section class="spd-hero">
-					<h1>Your entire story world, in one place.</h1>
-					<p class="spd-hero-sub">Projects, characters, franchises, and beat sheets — organized like a writers' room, not a spreadsheet.</p>
-					<div class="spd-hero-actions">
-						<a href="<?php echo $demo_url; ?>" class="spd-btn spd-btn-primary spd-btn-lg">Try the Demo — no account needed</a>
+		<span data-sc-progress></span>
+		<div class="sc-grain" aria-hidden="true"></div>
+
+		<header class="appbar">
+			<div class="appbar__mark"><span>P</span> Project Database</div>
+			<nav class="appbar__tabs">
+				<a href="#dashboard">Dashboard</a>
+				<a href="#databases">Databases</a>
+				<a href="#beatsheet">Beat Sheet</a>
+				<a href="#imports">Imports</a>
+				<a href="#pricing">Pricing</a>
+				<?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
+					<?php echo do_shortcode( '[nextend_social_login provider="google" redirect="' . esc_attr( admin_url() ) . '"]' ); ?>
+				<?php else : ?>
+					<a href="<?php echo $signin_url; ?>">Sign In</a>
+				<?php endif; ?>
+			</nav>
+		</header>
+
+		<main>
+
+			<!-- ACT 1 · Recognition — the dashboard, already populated. pin + count -->
+			<section id="dashboard" data-sc-act="pin" data-sc-span="2.2" data-sc-drift="#0b0b0d">
+				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center; gap:var(--sc-5);">
+					<div class="sc-copy" data-sc-cue="0 0.7 0">
+						<p class="sample-note" style="margin-bottom:var(--sc-3)">Live sample data · this is the real dashboard, seeded for the demo</p>
+						<h1 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-2)">Good morning. Your library is already here.</h1>
+						<p class="sc-body">No empty state, no setup wizard — six projects, two franchises, four characters, already organized.</p>
 					</div>
-				</section>
-
-				<section class="spd-features">
-					<div class="spd-feature"><div class="spd-feature-icon">📁</div><h3>Project Database</h3><p>Track every script, pitch, and outline with progress, genre, and stage in one dashboard.</p></div>
-					<div class="spd-feature"><div class="spd-feature-icon">🔀</div><h3>Franchise Database</h3><p>Group related projects into shared universes and see the whole IP ecosystem at a glance.</p></div>
-					<div class="spd-feature"><div class="spd-feature-icon">👥</div><h3>Character Database</h3><p>Keep protagonists, antagonists, and supporting casts organized across every project.</p></div>
-					<div class="spd-feature"><div class="spd-feature-icon">📊</div><h3>Beat Sheet Calculator</h3><p>Generate structure-perfect beat sheets — Save the Cat, three-act, or teleplay — scaled to any page count.</p></div>
-					<div class="spd-feature"><div class="spd-feature-icon">⇵</div><h3>Imports &amp; Exports</h3><p>Bring in scripts, treatments, and posters, and export a polished one-sheet for any project.</p></div>
-				</section>
-
-				<section class="spd-pricing">
-					<h2>Simple pricing</h2>
-					<div class="spd-pricing-grid">
-						<?php foreach ( $plans as $plan ) : ?>
-							<div class="spd-price-card<?php echo 'pro' === $plan['id'] ? ' spd-price-card-highlight' : ''; ?>">
-								<div class="spd-price-name"><?php echo esc_html( $plan['name'] ); ?></div>
-								<div class="spd-price-amount">$<?php echo (int) $plan['price']; ?><span><?php echo esc_html( $plan['period'] ); ?></span></div>
-								<ul class="spd-price-features">
-									<?php foreach ( $plan['features'] as $f ) : ?>
-										<li><?php echo esc_html( $f ); ?></li>
-									<?php endforeach; ?>
-								</ul>
-							</div>
-						<?php endforeach; ?>
+					<div class="stat-grid" data-sc-cue="0.1 0.85">
+						<div class="surface-card"><div class="stat-label">Total Projects</div><div class="stat-value"><span data-sc-count="0 6" data-sc-count-at="0.15 0.55">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Franchises</div><div class="stat-value"><span data-sc-count="0 2" data-sc-count-at="0.22 0.6">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Characters</div><div class="stat-value"><span data-sc-count="0 4" data-sc-count-at="0.28 0.65">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Complete</div><div class="stat-value"><span data-sc-count="0 1" data-sc-count-at="0.34 0.7">0</span></div></div>
 					</div>
-				</section>
+				</div>
+			</section>
 
-				<footer class="spd-home-footer">Project Database for Storytellers</footer>
-			</div>
+			<!-- ACT 2 · Substance — the databases are real, linked records. flow + in -->
+			<section class="sc-section" data-sc-act="flow" data-sc-drift="#101115">
+				<div class="sc-wrap">
+					<div class="sc-stack" data-sc-in style="margin-bottom:var(--sc-8)">
+						<h2 class="sc-display sc-display--md">Projects, franchises, and characters — actually linked.</h2>
+						<p class="sc-body">Not three separate lists. A character points at a project, a project points at a franchise, and the franchise page shows every linked project back.</p>
+					</div>
+					<div class="db-row" data-sc-in data-sc-stagger="90">
+						<div class="db-col">
+							<h3>Projects</h3>
+							<div class="db-item"><span class="name">Neon Requiem</span><span class="meta">Feature · Script · 78%</span></div>
+							<div class="db-item" style="margin-top:14px"><span class="name">The Glass Meridian</span><span class="meta">TV Series · Pitch · 45%</span></div>
+						</div>
+						<div class="db-col">
+							<h3>Franchises</h3>
+							<div class="db-item"><span class="name">The Meridian Universe</span><span class="meta">Active · Thriller, Sci-Fi, Noir</span></div>
+							<div class="db-item" style="margin-top:14px"><span class="name">Epoch Saga</span><span class="meta">Development · Sci-Fi, Fantasy</span></div>
+						</div>
+						<div class="db-col">
+							<h3>Characters</h3>
+							<div class="db-item"><span class="name">Detective Mara Voss</span><span class="meta">Protagonist · Neon Requiem</span></div>
+							<div class="db-item" style="margin-top:14px"><span class="name">The Architect</span><span class="meta">Antagonist · The Glass Meridian</span></div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ACT 3 · Turn — THE PEAK. Beat sheet assembles live, driven by --sc-p. pin -->
+			<section id="beatsheet" data-sc-act="pin" data-sc-span="3.4" data-sc-drift="#0e0e12">
+				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center;">
+					<div class="beatsheet-panel">
+						<div class="sc-copy" data-sc-cue="0 0.18 0">
+							<p class="sample-note" style="margin-bottom:var(--sc-2)">The real generator, not a mockup</p>
+							<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
+						</div>
+						<div class="beatsheet-head">
+							<span class="pill pill--accent">Feature Film · Save the Cat</span>
+							<span class="pill">110 pages</span>
+						</div>
+						<table class="beat-table" id="beatTable" aria-live="polite"></table>
+					</div>
+				</div>
+			</section>
+
+			<!-- ACT 4 · Range — imports/exports, the practical edges. pan + tilt -->
+			<section id="imports" data-sc-act="pan" data-sc-span="2.4" data-sc-drift="#0b0b0d">
+				<div data-sc-stage>
+					<div class="rail" data-sc-pan="0.05" style="display:flex; align-items:center; gap:var(--sc-5); padding-inline:var(--sc-gutter);">
+						<div class="rail__lead sc-stack" style="flex:0 0 260px;">
+							<h2 class="sc-display sc-display--md">Every file finds its place.</h2>
+							<p class="sc-body">Scripts, treatments, beat sheets, posters, research — imported once, attached to the right project.</p>
+						</div>
+						<article class="surface-card" data-sc-tilt="6"><div class="icon">📄</div><h3>Script</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.fdx, .pdf, .docx</p></article>
+						<article class="surface-card" data-sc-tilt="6"><div class="icon">📋</div><h3>Treatment</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.docx, .pdf</p></article>
+						<article class="surface-card" data-sc-tilt="6"><div class="icon">📊</div><h3>Beat Sheet</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.xlsx, .csv</p></article>
+						<article class="surface-card" data-sc-tilt="6"><div class="icon">🎬</div><h3>Poster</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.jpg, .png, .svg</p></article>
+						<article class="surface-card" data-sc-tilt="6"><div class="icon">📚</div><h3>Research</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.pdf, .docx</p></article>
+					</div>
+				</div>
+			</section>
+
+			<!-- ACT 5 · Commitment — real pricing (from SPD_REST_API::plans_data()),
+			     then an actual input. LAST element on the page. pin -->
+			<section id="pricing" data-sc-act="pin" data-sc-span="1.3" data-sc-drift="#08090a">
+				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center;">
+					<div class="sc-copy" data-sc-cue="0.05" style="width:100%">
+						<h2 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-5)">Simple pricing. One action.</h2>
+						<div class="price-row">
+							<?php foreach ( $plans as $plan ) : ?>
+								<div class="surface-card price-card"<?php echo 'pro' === $plan['id'] ? ' style="border-color: var(--sc-accent)"' : ''; ?>>
+									<div class="stat-label"><?php echo esc_html( trim( explode( '—', $plan['name'] )[0] ) ); ?></div>
+									<div class="price-amount">$<span data-sc-count="0 <?php echo (int) $plan['price']; ?>" data-sc-count-at="0.1 0.35">0</span><?php echo esc_html( $plan['period'] ); ?></div>
+									<p class="sc-body" style="font-size:var(--sc-t-sm); margin-top:8px"><?php echo esc_html( implode( ', ', array_slice( $plan['features'], 0, 3 ) ) ); ?>.</p>
+								</div>
+							<?php endforeach; ?>
+						</div>
+						<form class="start-row" id="startForm">
+							<input type="text" id="startTitle" placeholder="Type your next project's title…" aria-label="Your next project's title">
+							<button type="submit" class="cta" data-sc-magnet="0.26" data-sc-rise="0">Start in the demo</button>
+						</form>
+					</div>
+					<footer style="margin-top:var(--sc-8); font-size:var(--sc-t-xs); color:var(--sc-ink-soft)">Project Database for Storytellers</footer>
+				</div>
+			</section>
+
+		</main>
+
+		<script src="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/js/scrollcraft-engine.js' ); ?>?v=<?php echo SPD_VERSION; ?>"></script>
+		<script>ScrollCraft.mount(document.body);</script>
+		<script>window.SPD_DEMO_URL = <?php echo wp_json_encode( $demo_url ); ?>;</script>
+		<script src="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/js/homepage-scroll.js' ); ?>?v=<?php echo SPD_VERSION; ?>"></script>
 		</body>
 		</html>
 		<?php
@@ -160,7 +254,7 @@ class SPD_Public_Site {
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Demo — Project Database</title>
-		<?php echo self::asset_tags(); ?>
+		<?php echo self::demo_asset_tags(); ?>
 		<style>
 			.spd-demo-topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #0e0e10; border-bottom: 1px solid #2a2a2e; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10002; color: #f2f0ec; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; }
 			.spd-demo-topbar a { color: #e3b077; text-decoration: none; font-weight: 600; }

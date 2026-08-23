@@ -21,7 +21,20 @@ flow, by design.
 A public marketing homepage lives at `yoursite.com/storyteller-database/`,
 with a sandboxed demo (sample data, nothing saved) at
 `yoursite.com/storyteller-database/demo/`. Both work regardless of your
-active theme. If the rewrite rules don't resolve right after activating
+active theme.
+
+The homepage is a scroll-driven page built with the
+[scrollcraft](https://github.com/nateherkai/scroll-craft) engine (MIT —
+vendored unmodified as `assets/*/scrollcraft-engine.*`; see
+`third-party-licenses/`): the dashboard stats count up, the databases
+section reveals real linked records, and the Beat Sheet Calculator section
+assembles its table row by row as you scroll, computed live from the same
+Save-the-Cat math the real calculator uses. All of it is the same labelled
+sample data as the `/demo/` page — never your real private projects, since
+this page is public. Typing a title into the "Start in the demo" field on
+the pricing section carries it straight into the demo's New Project form.
+
+If the rewrite rules don't resolve right after activating
 (a 404 on those URLs), go to **Settings → Permalinks** and click **Save
 Changes** once — that forces WordPress to re-flush its rewrite rules.
 

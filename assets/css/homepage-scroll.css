@@ -1,0 +1,76 @@
+  :root {
+    --sc-canvas:     #0b0b0d;
+    --sc-surface:    #17171a;
+    --sc-ink:        #f2f0ec;
+    --sc-ink-soft:   #9a9ba1;
+    --sc-accent:     #e3b077;
+    --sc-accent-ink: #1a1408;
+    --sc-font-display: "Archivo", system-ui, sans-serif;
+    --sc-font-text:    "Manrope", system-ui, sans-serif;
+  }
+
+  /* ---- App chrome standing in for nav: a slim tab strip, real links,
+     no wordmark-plus-CTA marketing bar (banned by the Live Surface grammar). ---- */
+  .appbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: var(--sc-z-chrome);
+    display: flex; align-items: center; gap: var(--sc-6);
+    height: 56px; padding-inline: var(--sc-gutter);
+    background: color-mix(in oklab, var(--sc-canvas) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--sc-hairline);
+  }
+  .appbar__mark { display: flex; align-items: center; gap: 8px; font-family: var(--sc-font-display); font-weight: 700; font-size: var(--sc-t-sm); }
+  .appbar__mark span { width: 20px; height: 20px; border-radius: 6px; background: var(--sc-accent); color: var(--sc-accent-ink); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+  .appbar__tabs { display: flex; gap: var(--sc-2); overflow-x: auto; }
+  .appbar__tabs a { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); text-decoration: none; padding: 8px 10px; border-radius: var(--sc-r-sm); white-space: nowrap; }
+  .appbar__tabs a:hover, .appbar__tabs a.is-active { color: var(--sc-ink); background: var(--sc-surface); }
+
+  main { padding-top: 56px; }
+
+  /* ---- Shared surface components (card / table / stat), built to the
+     taste floor: --sc-r-md radius, --sc-e1/e2 shadows, tinted secondary ink. ---- */
+  .surface-card { background: var(--sc-surface); border: 1px solid var(--sc-hairline); border-radius: var(--sc-r-lg); padding: var(--sc-5); box-shadow: var(--sc-e1); }
+  .pill { display: inline-flex; align-items: center; font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: var(--sc-track-wide); text-transform: uppercase; padding: 4px 10px; border-radius: var(--sc-r-pill); background: color-mix(in oklab, var(--sc-ink) 8%, transparent); color: var(--sc-ink-soft); }
+  .pill--accent { background: color-mix(in oklab, var(--sc-accent) 22%, transparent); color: var(--sc-accent); }
+
+  /* ---- Act 1: Dashboard (pin + count) ---- */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sc-4); width: 100%; max-width: 900px; }
+  .stat-grid .surface-card { text-align: left; }
+  .stat-grid .stat-label { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); color: var(--sc-ink-soft); text-transform: uppercase; letter-spacing: var(--sc-track-wide); }
+  .stat-grid .stat-value { font-family: var(--sc-font-display); font-size: var(--sc-t-2xl); font-weight: 800; margin-top: var(--sc-2); font-variant-numeric: tabular-nums; }
+  @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---- Act 2: Databases (flow + in) ---- */
+  .db-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sc-5); }
+  .db-col h3 { font-family: var(--sc-font-display); font-size: var(--sc-t-lg); margin: 0 0 var(--sc-4); }
+  .db-item { display: flex; flex-direction: column; gap: 6px; }
+  .db-item .name { font-weight: 600; }
+  .db-item .meta { font-size: var(--sc-t-sm); color: var(--sc-ink-soft); }
+  @media (max-width: 900px) { .db-row { grid-template-columns: 1fr; } }
+
+  /* ---- Act 3: Beat Sheet (pin, the peak, bespoke --sc-p driven reveal) ---- */
+  .beatsheet-panel { width: 100%; max-width: 760px; }
+  .beatsheet-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--sc-4); }
+  .beatsheet-head h2 { margin: 0; }
+  .beat-table { width: 100%; border-collapse: collapse; }
+  .beat-table tr { opacity: 0; transform: translateY(10px); transition: opacity 260ms var(--sc-ease-out), transform 260ms var(--sc-ease-out); }
+  .beat-table tr.is-in { opacity: 1; transform: translateY(0); }
+  .beat-table td { padding: 10px 12px; border-bottom: 1px solid var(--sc-hairline); vertical-align: top; font-size: var(--sc-t-sm); }
+  .beat-table td.pg { color: var(--sc-accent); font-weight: 700; font-variant-numeric: tabular-nums; width: 3.5em; }
+  .beat-table td.name { font-weight: 600; width: 11em; }
+
+  /* ---- Act 4: Imports (pan rail + tilt) ---- */
+  .imports-rail { display: flex; gap: var(--sc-4); }
+  .imports-rail .surface-card { flex: 0 0 220px; }
+  .imports-rail .icon { font-size: 22px; margin-bottom: var(--sc-3); }
+
+  /* ---- Act 5: Pricing + close (pin, count, magnet, real input) ---- */
+  .price-row { display: flex; gap: var(--sc-4); width: 100%; max-width: 640px; margin-bottom: var(--sc-7); }
+  .price-card { flex: 1; }
+  .price-amount { font-family: var(--sc-font-display); font-size: var(--sc-t-2xl); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .start-row { display: flex; gap: var(--sc-3); width: 100%; max-width: 520px; }
+  .start-row input { flex: 1; background: var(--sc-surface); border: 1px solid var(--sc-hairline-strong); color: var(--sc-ink); border-radius: var(--sc-r-md); padding: 14px 16px; font-size: var(--sc-t-base); font-family: var(--sc-font-text); }
+  .start-row input:focus { outline: 2px solid var(--sc-accent); outline-offset: 1px; }
+  .cta { display: inline-flex; align-items: center; justify-content: center; background: var(--sc-accent); color: var(--sc-accent-ink); font-weight: 700; border: none; border-radius: var(--sc-r-md); padding: 14px 22px; font-size: var(--sc-t-base); cursor: pointer; text-decoration: none; }
+
+  .sample-note { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }

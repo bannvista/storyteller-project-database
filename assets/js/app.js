@@ -319,12 +319,12 @@
 		} );
 	}
 
-	function openProjectForm( project ) {
+	function openProjectForm( project, prefillTitle ) {
 		loadFranchises().then( function ( franchises ) {
 			var franchiseOptions = '<option value="0">— None —</option>' + selectOptions( franchises.map( function ( f ) { return { value: f.id, label: f.title }; } ), project ? project.franchise_id : '', function ( v ) { return v.label; } );
 
 			var body =
-				'<div class="spd-field"><label>Title</label><input class="spd-input" name="title" required value="' + esc( project ? project.title : '' ) + '"></div>' +
+				'<div class="spd-field"><label>Title</label><input class="spd-input" name="title" required value="' + esc( project ? project.title : ( prefillTitle || '' ) ) + '"></div>' +
 				'<div class="spd-field-row">' +
 					'<div class="spd-field"><label>Type</label><select class="spd-select" name="type">' + selectOptions( PROJECT_TYPES, project ? project.type : 'feature' ) + '</select></div>' +
 					'<div class="spd-field"><label>Stage</label><select class="spd-select" name="stage">' + selectOptions( PROJECT_STAGES, project ? project.stage : 'idea' ) + '</select></div>' +
@@ -779,4 +779,11 @@
 
 	window.addEventListener( 'hashchange', route );
 	route();
+
+	/* Arriving from the homepage's "Start in the demo" field: open the New
+	   Project modal pre-filled with whatever title they typed there. */
+	var startTitle = new URLSearchParams( location.search ).get( 'start_title' );
+	if ( startTitle ) {
+		setTimeout( function () { openProjectForm( null, startTitle ); }, 300 );
+	}
 })();
