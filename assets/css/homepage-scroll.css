@@ -66,9 +66,23 @@
   .beat-table td.pg { color: var(--sc-accent); font-weight: 700; font-variant-numeric: tabular-nums; width: 3.5em; }
   .beat-table td.name { font-weight: 600; width: 11em; }
 
-  /* ---- Act 4: Imports (pan rail + tilt) ---- */
-  .imports-rail { display: flex; gap: var(--sc-4); }
-  .imports-rail .surface-card { flex: 0 0 220px; }
+  /* ---- Act 4: Imports (real side-to-side scroll rail + tilt) ----
+     Native overflow-x, not a scroll-position-driven transform: drag, swipe,
+     or shift+wheel moves the rail independently of the page's own vertical
+     scroll, same as any ordinary side-scrolling shelf. */
+  .imports-rail {
+    display: flex; gap: var(--sc-4); width: 100%;
+    overflow-x: auto; overflow-y: hidden;
+    padding-inline: var(--sc-gutter); padding-block: var(--sc-2) var(--sc-5);
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sc-hairline-strong) transparent;
+  }
+  .imports-rail::-webkit-scrollbar { height: 8px; }
+  .imports-rail::-webkit-scrollbar-track { background: transparent; }
+  .imports-rail::-webkit-scrollbar-thumb { background: var(--sc-hairline-strong); border-radius: var(--sc-r-pill); }
+  .imports-rail .surface-card { flex: 0 0 220px; scroll-snap-align: start; }
   .imports-rail .icon { font-size: 22px; margin-bottom: var(--sc-3); }
 
   /* ---- Act 5: Pricing + close (pin, count, magnet, real input) ---- */

@@ -132,24 +132,25 @@ class SPD_Public_Site {
 
 		<main>
 
-			<!-- ACT 1 · Recognition — the dashboard, already populated. pin + count -->
-			<section id="dashboard" data-sc-act="pin" data-sc-span="2.2" data-sc-drift="#0b0b0d">
-				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center; gap:var(--sc-4);">
+			<!-- ACT 1 · Recognition — the dashboard, already populated. Static on
+			     load (no pin, no fade-in): the reader should never have to
+			     scroll to see this. The four stat numbers auto-count once,
+			     like a looping gif, the moment the section is on screen — see
+			     the .js-autocount block in homepage-scroll.js. No .sc-section
+			     class here on purpose: .spd-stage-flex already supplies the
+			     vertical padding, so adding it too would double the gap. -->
+			<section id="dashboard" data-sc-act="flow" data-sc-drift="#0b0b0d">
+				<div class="sc-wrap spd-stage-flex" style="justify-content:center; gap:var(--sc-4);">
 					<p class="sample-note">Live sample data, this is the real dashboard, seeded for the demo</p>
-					<!-- Plain flowing block, NOT .sc-copy: that engine class is
-					     position:absolute (a corner overlay meant to sit atop a
-					     video/photo stage). Using it here took this heading out
-					     of the document flow entirely, so the stat grid below
-					     collapsed up underneath it instead of after it. -->
-					<div data-sc-cue="0 0.7 0">
+					<div>
 						<h1 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-2)">Good morning. Your library is already here.</h1>
 						<p class="sc-body">No empty state, no setup wizard: six projects, two franchises, four characters, already organized.</p>
 					</div>
-					<div class="stat-grid" data-sc-cue="0.1 0.85">
-						<div class="surface-card"><div class="stat-label">Total Projects</div><div class="stat-value"><span data-sc-count="0 6" data-sc-count-at="0.15 0.55">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Franchises</div><div class="stat-value"><span data-sc-count="0 2" data-sc-count-at="0.22 0.6">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Characters</div><div class="stat-value"><span data-sc-count="0 4" data-sc-count-at="0.28 0.65">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Complete</div><div class="stat-value"><span data-sc-count="0 1" data-sc-count-at="0.34 0.7">0</span></div></div>
+					<div class="stat-grid">
+						<div class="surface-card"><div class="stat-label">Total Projects</div><div class="stat-value"><span class="js-autocount" data-count-to="6">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Franchises</div><div class="stat-value"><span class="js-autocount" data-count-to="2">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Characters</div><div class="stat-value"><span class="js-autocount" data-count-to="4">0</span></div></div>
+						<div class="surface-card"><div class="stat-label">Complete</div><div class="stat-value"><span class="js-autocount" data-count-to="1">0</span></div></div>
 					</div>
 				</div>
 			</section>
@@ -181,14 +182,16 @@ class SPD_Public_Site {
 				</div>
 			</section>
 
-			<!-- ACT 3 · Turn — THE PEAK. Beat sheet assembles live, driven by --sc-p. pin -->
+			<!-- ACT 3 · Turn — THE PEAK. Beat sheet assembles live, driven by --sc-p.
+			     Heading and pills are static (visible the instant the section is
+			     on screen, no scroll-triggered fade); only the row-by-row build
+			     stays tied to scroll, since that live-build IS the feature being
+			     demonstrated. pin -->
 			<section id="beatsheet" data-sc-act="pin" data-sc-span="3.4" data-sc-drift="#0e0e12">
 				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center;">
 					<div class="beatsheet-panel">
 						<p class="sample-note">The real generator, not a mockup</p>
-						<div data-sc-cue="0 0.18 0">
-							<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
-						</div>
+						<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
 						<div class="beatsheet-head">
 							<span class="pill pill--accent">Feature Film · Save the Cat</span>
 							<span class="pill">110 pages</span>
@@ -200,20 +203,23 @@ class SPD_Public_Site {
 				</div>
 			</section>
 
-			<!-- ACT 4 · Range — imports/exports, the practical edges. pan + tilt -->
-			<section id="imports" data-sc-act="pan" data-sc-span="2.4" data-sc-drift="#0b0b0d">
-				<div data-sc-stage>
-					<div class="rail" data-sc-pan="0.05" style="display:flex; align-items:center; gap:var(--sc-5); padding-inline:var(--sc-gutter);">
-						<div class="rail__lead sc-stack" style="flex:0 0 260px;">
-							<h2 class="sc-display sc-display--md">Every file finds its place.</h2>
-							<p class="sc-body">Scripts, treatments, beat sheets, posters, research: imported once, attached to the right project.</p>
-						</div>
-						<article class="surface-card" data-sc-tilt="6"><div class="icon">📄</div><h3>Script</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.fdx, .pdf, .docx</p></article>
-						<article class="surface-card" data-sc-tilt="6"><div class="icon">📋</div><h3>Treatment</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.docx, .pdf</p></article>
-						<article class="surface-card" data-sc-tilt="6"><div class="icon">📊</div><h3>Beat Sheet</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.xlsx, .csv</p></article>
-						<article class="surface-card" data-sc-tilt="6"><div class="icon">🎬</div><h3>Poster</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.jpg, .png, .svg</p></article>
-						<article class="surface-card" data-sc-tilt="6"><div class="icon">📚</div><h3>Research</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.pdf, .docx</p></article>
+			<!-- ACT 4 · Range — imports/exports, the practical edges. The card rail
+			     is a REAL horizontally-scrollable strip (native overflow-x, drag
+			     or swipe or shift+wheel to move it) rather than a vertical-scroll-
+			     driven pan, so it behaves like an ordinary side-scrolling shelf. -->
+			<section id="imports" class="sc-section" data-sc-act="flow" data-sc-drift="#0b0b0d">
+				<div class="sc-wrap">
+					<div class="sc-stack" data-sc-in style="margin-bottom:var(--sc-5)">
+						<h2 class="sc-display sc-display--md">Every file finds its place.</h2>
+						<p class="sc-body">Scripts, treatments, beat sheets, posters, research: imported once, attached to the right project.</p>
 					</div>
+				</div>
+				<div class="imports-rail" data-sc-in data-sc-stagger="60">
+					<article class="surface-card" data-sc-tilt="6"><div class="icon">📄</div><h3>Script</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.fdx, .pdf, .docx</p></article>
+					<article class="surface-card" data-sc-tilt="6"><div class="icon">📋</div><h3>Treatment</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.docx, .pdf</p></article>
+					<article class="surface-card" data-sc-tilt="6"><div class="icon">📊</div><h3>Beat Sheet</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.xlsx, .csv</p></article>
+					<article class="surface-card" data-sc-tilt="6"><div class="icon">🎬</div><h3>Poster</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.jpg, .png, .svg</p></article>
+					<article class="surface-card" data-sc-tilt="6"><div class="icon">📚</div><h3>Research</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.pdf, .docx</p></article>
 				</div>
 			</section>
 

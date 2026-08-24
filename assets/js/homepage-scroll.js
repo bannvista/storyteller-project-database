@@ -40,6 +40,41 @@
   requestAnimationFrame( tick );
 })();
 
+/* Dashboard stat counters: auto-count once, time-based, the moment the
+   section is on screen — not tied to scroll position, so it just plays like
+   a looping gif rather than requiring the reader to keep dragging the
+   scrollbar to watch the numbers move. Since Dashboard is the first thing on
+   the page, this fires on load without any scrolling at all. */
+(function () {
+  var els = document.querySelectorAll( '.js-autocount' );
+  if ( !els.length ) return;
+  var DURATION = 900;
+  function easeOutCubic( t ) { return 1 - Math.pow( 1 - t, 3 ); }
+  function run( el ) {
+    var target = parseFloat( el.getAttribute( 'data-count-to' ) ) || 0;
+    var start = null;
+    function step( ts ) {
+      if ( start === null ) start = ts;
+      var t = Math.min( ( ts - start ) / DURATION, 1 );
+      el.textContent = String( Math.round( target * easeOutCubic( t ) ) );
+      if ( t < 1 ) requestAnimationFrame( step );
+    }
+    requestAnimationFrame( step );
+  }
+  if ( 'IntersectionObserver' in window ) {
+    var io = new IntersectionObserver( function ( entries ) {
+      entries.forEach( function ( entry ) {
+        if ( !entry.isIntersecting ) return;
+        run( entry.target );
+        io.unobserve( entry.target );
+      } );
+    }, { threshold: 0.4 } );
+    Array.prototype.forEach.call( els, function ( el ) { io.observe( el ); } );
+  } else {
+    Array.prototype.forEach.call( els, run );
+  }
+})();
+
 /* Real input, real navigation: typing a title and submitting takes it
    straight into the actual demo's New Project flow. */
 document.getElementById( 'startForm' ).addEventListener( 'submit', function ( e ) {
