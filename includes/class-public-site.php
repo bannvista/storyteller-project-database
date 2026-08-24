@@ -134,9 +134,14 @@ class SPD_Public_Site {
 
 			<!-- ACT 1 · Recognition — the dashboard, already populated. pin + count -->
 			<section id="dashboard" data-sc-act="pin" data-sc-span="2.2" data-sc-drift="#0b0b0d">
-				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center; gap:var(--sc-5);">
-					<p class="sample-note" style="margin-bottom:var(--sc-3)">Live sample data, this is the real dashboard, seeded for the demo</p>
-					<div class="sc-copy" data-sc-cue="0 0.7 0">
+				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center; gap:var(--sc-4);">
+					<p class="sample-note">Live sample data, this is the real dashboard, seeded for the demo</p>
+					<!-- Plain flowing block, NOT .sc-copy: that engine class is
+					     position:absolute (a corner overlay meant to sit atop a
+					     video/photo stage). Using it here took this heading out
+					     of the document flow entirely, so the stat grid below
+					     collapsed up underneath it instead of after it. -->
+					<div data-sc-cue="0 0.7 0">
 						<h1 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-2)">Good morning. Your library is already here.</h1>
 						<p class="sc-body">No empty state, no setup wizard: six projects, two franchises, four characters, already organized.</p>
 					</div>
@@ -178,17 +183,19 @@ class SPD_Public_Site {
 
 			<!-- ACT 3 · Turn — THE PEAK. Beat sheet assembles live, driven by --sc-p. pin -->
 			<section id="beatsheet" data-sc-act="pin" data-sc-span="3.4" data-sc-drift="#0e0e12">
-				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center;">
+				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center;">
 					<div class="beatsheet-panel">
-						<p class="sample-note" style="margin-bottom:var(--sc-2)">The real generator, not a mockup</p>
-						<div class="sc-copy" data-sc-cue="0 0.18 0">
+						<p class="sample-note">The real generator, not a mockup</p>
+						<div data-sc-cue="0 0.18 0">
 							<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
 						</div>
 						<div class="beatsheet-head">
 							<span class="pill pill--accent">Feature Film · Save the Cat</span>
 							<span class="pill">110 pages</span>
 						</div>
-						<table class="beat-table" id="beatTable" aria-live="polite"></table>
+						<div class="beatsheet-table-scroll">
+							<table class="beat-table" id="beatTable" aria-live="polite"></table>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -213,8 +220,8 @@ class SPD_Public_Site {
 			<!-- ACT 5 · Commitment — real pricing (from SPD_REST_API::plans_data()),
 			     then an actual input. LAST element on the page. pin -->
 			<section id="pricing" data-sc-act="pin" data-sc-span="1.3" data-sc-drift="#08090a">
-				<div data-sc-stage class="sc-wrap" style="flex-direction:column; align-items:flex-start; justify-content:center;">
-					<div class="sc-copy" data-sc-cue="0.05" style="width:100%">
+				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center;">
+					<div data-sc-cue="0.05" style="width:100%">
 						<h2 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-5)">Simple pricing. One action.</h2>
 						<div class="price-row">
 							<?php foreach ( $plans as $plan ) : ?>

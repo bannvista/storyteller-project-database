@@ -27,6 +27,13 @@
 
   main { padding-top: 56px; }
 
+  /* The stage element the engine sticks/holds for a pin act. Content inside
+     stacks normally (never .sc-copy for this grammar - see the PHP comment
+     where it's used - that engine class is position:absolute, meant as a
+     corner overlay atop video/photo, and floats over normal siblings if
+     reused here instead of stacking after them). */
+  .spd-stage-flex { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding-block: var(--sc-6); gap: var(--sc-4); }
+
   /* ---- Shared surface components (card / table / stat), built to the
      taste floor: --sc-r-md radius, --sc-e1/e2 shadows, tinted secondary ink. ---- */
   .surface-card { background: var(--sc-surface); border: 1px solid var(--sc-hairline); border-radius: var(--sc-r-lg); padding: var(--sc-5); box-shadow: var(--sc-e1); }
@@ -73,4 +80,22 @@
   .start-row input:focus { outline: 2px solid var(--sc-accent); outline-offset: 1px; }
   .cta { display: inline-flex; align-items: center; justify-content: center; background: var(--sc-accent); color: var(--sc-accent-ink); font-weight: 700; border: none; border-radius: var(--sc-r-md); padding: 14px 22px; font-size: var(--sc-t-base); cursor: pointer; text-decoration: none; }
 
-  .sample-note { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }
+  .sample-note { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); margin: 0 0 var(--sc-3); }
+
+  /* The table can grow to 15 rows; the pinned stage is capped at one viewport
+     tall by the engine, so the table scrolls internally rather than forcing
+     an enormous pin span (or getting clipped) once it outgrows the space
+     the heading/pills leave it. */
+  .beatsheet-table-scroll { max-height: min(48vh, 420px); overflow-y: auto; }
+
+  @media (max-width: 640px) {
+    .spd-stage-flex { padding-block: var(--sc-4); gap: var(--sc-3); }
+    .stat-grid { gap: var(--sc-3); }
+    .stat-grid .surface-card { padding: var(--sc-4); }
+    .stat-grid .stat-value { font-size: var(--sc-t-xl); }
+    .beatsheet-table-scroll { max-height: 46vh; }
+    .beat-table { font-size: var(--sc-t-xs); }
+    .beat-table td { padding: 7px 8px; }
+    .price-row { flex-direction: column; margin-bottom: var(--sc-5); }
+    .imports-rail .surface-card { flex: 0 0 170px; padding: var(--sc-4); }
+  }
