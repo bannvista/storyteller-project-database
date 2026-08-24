@@ -51,11 +51,15 @@ document.getElementById( 'startForm' ).addEventListener( 'submit', function ( e 
 
 /* Active-tab highlight on the app-chrome strip as acts pass. */
 (function () {
-  // Only in-page anchors (#dashboard etc.) participate in the scroll
-  // highlight — the Sign In / Google button shares this nav visually but
-  // links off-page, and querySelector() throws on a full URL.
-  var links = document.querySelectorAll( '.appbar__tabs a[href^="#"]' );
-  var sections = Array.prototype.map.call( links, function ( a ) { return document.querySelector( a.getAttribute( 'href' ) ); } );
+  // Only real in-page anchors (#dashboard etc.) participate in the scroll
+  // highlight. Excludes a bare "#" too, since that's not a valid ID
+  // selector and third-party buttons (e.g. Nextend's Google button) render
+  // one for their JS-driven click handlers rather than a real link.
+  var links = Array.prototype.filter.call(
+    document.querySelectorAll( '.appbar__tabs a[href^="#"]' ),
+    function ( a ) { return a.getAttribute( 'href' ).length > 1; }
+  );
+  var sections = links.map( function ( a ) { return document.querySelector( a.getAttribute( 'href' ) ); } );
   function onScroll() {
     var y = window.scrollY + 80;
     var activeIndex = 0;
