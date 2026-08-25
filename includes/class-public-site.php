@@ -269,15 +269,16 @@ class SPD_Public_Site {
 	/**
 	 * Matches the Figma Make source's Signup() component: a two-column
 	 * layout with sample-project social proof on the left, a profile-setup
-	 * form on the right. Deliberately NOT a real account-creation flow —
-	 * this is a single-user tool (real access stays admin-only via
-	 * wp-login.php) — so submitting just carries the typed name into the
-	 * sandboxed demo, matching the "nothing here is saved" pattern the
-	 * demo itself already uses.
+	 * form on the right. This IS a real account-creation flow -- submitting
+	 * calls the public storyteller/v1/signup REST route (SPD_REST_API::
+	 * signup()), which creates a genuine WordPress account with its own
+	 * private, isolated project database and logs the new user straight
+	 * in. No password field: like most modern signup forms, WordPress
+	 * generates one and emails the new user a link to set their own.
 	 */
 	public static function render_signup() {
-		$demo_url = self::demo_url();
 		$home_url = self::home_url();
+		$nonce    = wp_create_nonce( 'spd_signup' );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
 		?>
@@ -314,12 +315,16 @@ class SPD_Public_Site {
 					<h2>Create your account</h2>
 					<p>Set up your creative workspace in under a minute.</p>
 					<form id="signupForm">
+						<input type="text" name="website_url" id="su-honeypot" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
+						<input type="hidden" id="su-nonce" value="<?php echo esc_attr( $nonce ); ?>">
+						<input type="hidden" id="su-creative-type" value="Screenwriter">
+						<div id="su-error" style="display:none;margin-bottom:16px;padding:10px 13px;border-radius:12px;background:rgba(212,24,61,0.1);border:1px solid rgba(212,24,61,0.3);color:#f87171;font-size:12.5px"></div>
 						<div class="su-field-row">
-							<div class="su-field"><label>Full Name</label><input type="text" id="su-name" placeholder="Jordan Mercer"></div>
-							<div class="su-field"><label>Email</label><input type="email" placeholder="jordan@studio.com"></div>
+							<div class="su-field"><label>Full Name</label><input type="text" id="su-name" placeholder="Jordan Mercer" required></div>
+							<div class="su-field"><label>Email</label><input type="email" id="su-email" placeholder="jordan@studio.com" required></div>
 						</div>
-						<div class="su-field"><label>Production Company</label><input type="text" placeholder="Meridian Films Inc."></div>
-						<div class="su-field"><label>Title / Role</label><input type="text" placeholder="Writer-Director"></div>
+						<div class="su-field"><label>Production Company</label><input type="text" id="su-company" placeholder="Meridian Films Inc."></div>
+						<div class="su-field"><label>Title / Role</label><input type="text" id="su-title" placeholder="Writer-Director"></div>
 						<div class="su-field">
 							<label>Primary Creative Type</label>
 							<div class="su-chip-row">
@@ -328,8 +333,8 @@ class SPD_Public_Site {
 								<?php endforeach; ?>
 							</div>
 						</div>
-						<button type="submit" class="lp-btn lp-btn-primary lp-btn-lg" style="width:100%;justify-content:center;margin-top:8px">Create Workspace →</button>
-						<p class="su-footnote">This is a sandboxed preview — nothing entered here is saved. <button type="button" id="su-signin-link">Already have an account? Sign in</button></p>
+						<button type="submit" class="lp-btn lp-btn-primary lp-btn-lg" id="su-submit" style="width:100%;justify-content:center;margin-top:8px">Create Workspace →</button>
+						<p class="su-footnote">Your own private workspace — nobody else can see it. <button type="button" id="su-signin-link">Already have an account? Sign in</button></p>
 					</form>
 				</div>
 			</div>
@@ -339,6 +344,7 @@ class SPD_Public_Site {
 				btn.addEventListener( 'click', function () {
 					document.querySelectorAll( '.su-type-chip' ).forEach( function ( b ) { b.classList.remove( 'active' ); } );
 					btn.classList.add( 'active' );
+					document.getElementById( 'su-creative-type' ).value = btn.textContent.trim();
 				} );
 			} );
 			document.getElementById( 'su-signin-link' ).addEventListener( 'click', function () {
@@ -346,9 +352,38 @@ class SPD_Public_Site {
 			} );
 			document.getElementById( 'signupForm' ).addEventListener( 'submit', function ( e ) {
 				e.preventDefault();
-				var name = document.getElementById( 'su-name' ).value.trim();
-				var url = <?php echo wp_json_encode( $demo_url ); ?> + ( name ? '?start_title=' + encodeURIComponent( name + '’s First Project' ) : '' );
-				window.location.href = url;
+				var errBox = document.getElementById( 'su-error' );
+				var submitBtn = document.getElementById( 'su-submit' );
+				errBox.style.display = 'none';
+				submitBtn.disabled = true;
+				submitBtn.textContent = 'Creating your workspace…';
+
+				fetch( <?php echo wp_json_encode( esc_url_raw( rest_url( 'storyteller/v1/signup' ) ) ); ?>, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					credentials: 'same-origin',
+					body: JSON.stringify( {
+						name: document.getElementById( 'su-name' ).value.trim(),
+						email: document.getElementById( 'su-email' ).value.trim(),
+						company: document.getElementById( 'su-company' ).value.trim(),
+						title: document.getElementById( 'su-title' ).value.trim(),
+						creative_type: document.getElementById( 'su-creative-type' ).value,
+						website_url: document.getElementById( 'su-honeypot' ).value,
+						_wpnonce: document.getElementById( 'su-nonce' ).value
+					} )
+				} ).then( function ( res ) {
+					return res.json().then( function ( data ) { return { ok: res.ok, data: data }; } );
+				} ).then( function ( result ) {
+					if ( ! result.ok ) {
+						throw new Error( result.data && result.data.message ? result.data.message : 'Something went wrong. Please try again.' );
+					}
+					window.location.href = result.data.redirect;
+				} ).catch( function ( e ) {
+					errBox.textContent = e.message;
+					errBox.style.display = 'block';
+					submitBtn.disabled = false;
+					submitBtn.textContent = 'Create Workspace →';
+				} );
 			} );
 		</script>
 		</body>

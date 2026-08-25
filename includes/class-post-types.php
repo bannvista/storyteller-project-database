@@ -13,9 +13,47 @@ class SPD_Post_Types {
 	const CHARACTER = 'spd_character';
 	const FRANCHISE = 'spd_franchise';
 
+	/**
+	 * The role self-registered customers get, and the capability that gates
+	 * the app's admin page + REST API for anyone who isn't a full site
+	 * administrator. Deliberately excludes edit_others_posts/delete_others_posts/
+	 * read_private_posts -- a spd_creator can only ever touch their OWN posts
+	 * of these types (WordPress's own map_meta_cap enforces this the same
+	 * way for ANY code path, not just this plugin's REST routes).
+	 */
+	const ROLE = 'spd_creator';
+	const CAP  = 'spd_use_app';
+
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_types' ) );
 		add_action( 'init', array( __CLASS__, 'register_meta' ) );
+	}
+
+	/**
+	 * Run once on activation. Site administrators already have every
+	 * capability granted here (and keep full oversight of all customers'
+	 * data via the REST API's manage_options bypass); this only needs to
+	 * grant the app capability to them explicitly and create the low-
+	 * privilege role that self-registered signups get.
+	 */
+	public static function register_role() {
+		$admin = get_role( 'administrator' );
+		if ( $admin && ! $admin->has_cap( self::CAP ) ) {
+			$admin->add_cap( self::CAP );
+		}
+
+		if ( ! get_role( self::ROLE ) ) {
+			add_role( self::ROLE, 'Storyteller Creator', array(
+				'read'                   => true,
+				'upload_files'           => true,
+				'edit_posts'             => true,
+				'edit_published_posts'   => true,
+				'delete_posts'           => true,
+				'delete_published_posts' => true,
+				'publish_posts'          => true,
+				self::CAP                => true,
+			) );
+		}
 	}
 
 	public static function register_post_types() {
@@ -131,7 +169,17 @@ class SPD_Post_Types {
 		}
 	}
 
-	public static function auth_callback() {
-		return current_user_can( 'manage_options' );
+	/**
+	 * Gates the default WP REST post-meta controller (this app's own
+	 * screens talk to SPD_REST_API's custom routes instead, which enforce
+	 * ownership separately) -- site admins can read/write any customer's
+	 * meta, and everyone else only their own post's meta.
+	 */
+	public static function auth_callback( $allowed, $meta_key, $post_id ) {
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		$post = get_post( $post_id );
+		return $post && (int) $post->post_author === get_current_user_id();
 	}
 }

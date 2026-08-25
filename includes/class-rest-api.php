@@ -4,9 +4,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Custom REST routes under storyteller/v1. Everything is gated to
- * manage_options since this is a single-user tool (the site owner) — there
- * is no multi-user access model to enforce here.
+ * Custom REST routes under storyteller/v1. Multi-tenant: any authenticated
+ * user carrying the spd_use_app capability (site admins, or the low-
+ * privilege spd_creator role a real signup assigns) can call these routes,
+ * but every route that touches a specific resource additionally checks
+ * ownership -- see owns_post() -- so one customer's projects, characters,
+ * and franchises are never visible to another. Site admins (manage_options)
+ * bypass the ownership check, keeping the site owner's support/oversight
+ * ability the same as it was as a single-user tool.
  */
 class SPD_REST_API {
 
@@ -17,11 +22,23 @@ class SPD_REST_API {
 	}
 
 	public static function can_manage() {
-		return current_user_can( 'manage_options' );
+		return is_user_logged_in() && current_user_can( SPD_Post_Types::CAP );
+	}
+
+	/** True if the given post belongs to the current user, or the current user can see everything. */
+	private static function owns_post( $post ) {
+		if ( ! $post ) {
+			return false;
+		}
+		return current_user_can( 'manage_options' ) || (int) $post->post_author === get_current_user_id();
 	}
 
 	public static function register_routes() {
 		$perm = array( __CLASS__, 'can_manage' );
+
+		register_rest_route( self::NS, '/signup', array(
+			'methods' => 'POST', 'callback' => array( __CLASS__, 'signup' ), 'permission_callback' => '__return_true',
+		) );
 
 		register_rest_route( self::NS, '/dashboard', array(
 			'methods' => 'GET', 'callback' => array( __CLASS__, 'get_dashboard' ), 'permission_callback' => $perm,
@@ -78,12 +95,20 @@ class SPD_REST_API {
 				'methods'             => 'GET',
 				'permission_callback' => $perm,
 				'callback'            => function ( $request ) use ( $post_type, $serializer ) {
+					// Every user's OWN library view, always -- including a
+					// site admin's. manage_options only bypasses the single-
+					// item ownership check below (a deliberate, narrow
+					// support-access path for a known post ID); it must NOT
+					// also apply here, or an admin's personal dashboard would
+					// silently show every customer's data blended into one
+					// list with no separation at all.
 					$posts = get_posts( array(
 						'post_type'      => $post_type,
 						'post_status'    => 'publish',
 						'posts_per_page' => -1,
 						'orderby'        => 'date',
 						'order'          => 'DESC',
+						'author'         => get_current_user_id(),
 					) );
 					return rest_ensure_response( array_map( $serializer, $posts ) );
 				},
@@ -96,6 +121,7 @@ class SPD_REST_API {
 						'post_type'   => $post_type,
 						'post_status' => 'publish',
 						'post_title'  => sanitize_text_field( $request->get_param( 'title' ) ?: 'Untitled' ),
+						'post_author' => get_current_user_id(),
 					), true );
 					if ( is_wp_error( $id ) ) {
 						return $id;
@@ -111,7 +137,7 @@ class SPD_REST_API {
 				'methods'             => 'GET',
 				'permission_callback' => $perm,
 				'callback'            => function ( $request ) use ( $post_type, $serializer ) {
-					$post = self::get_post_of_type( $request['id'], $post_type );
+					$post = self::get_owned_post_of_type( $request['id'], $post_type );
 					if ( ! $post ) {
 						return new WP_Error( 'spd_not_found', 'Not found.', array( 'status' => 404 ) );
 					}
@@ -122,7 +148,7 @@ class SPD_REST_API {
 				'methods'             => 'PUT',
 				'permission_callback' => $perm,
 				'callback'            => function ( $request ) use ( $post_type, $serializer, $saver ) {
-					$post = self::get_post_of_type( $request['id'], $post_type );
+					$post = self::get_owned_post_of_type( $request['id'], $post_type );
 					if ( ! $post ) {
 						return new WP_Error( 'spd_not_found', 'Not found.', array( 'status' => 404 ) );
 					}
@@ -137,7 +163,7 @@ class SPD_REST_API {
 				'methods'             => 'DELETE',
 				'permission_callback' => $perm,
 				'callback'            => function ( $request ) use ( $post_type ) {
-					$post = self::get_post_of_type( $request['id'], $post_type );
+					$post = self::get_owned_post_of_type( $request['id'], $post_type );
 					if ( ! $post ) {
 						return new WP_Error( 'spd_not_found', 'Not found.', array( 'status' => 404 ) );
 					}
@@ -148,9 +174,15 @@ class SPD_REST_API {
 		) );
 	}
 
-	private static function get_post_of_type( $id, $post_type ) {
+	/**
+	 * Looks up a post AND verifies the current user owns it (or is a site
+	 * admin) before returning it -- a 404 for someone else's post looks
+	 * identical to a genuinely missing one, so IDs can't be used to probe
+	 * for the existence of other customers' data.
+	 */
+	private static function get_owned_post_of_type( $id, $post_type ) {
 		$post = get_post( (int) $id );
-		if ( ! $post || $post->post_type !== $post_type ) {
+		if ( ! $post || $post->post_type !== $post_type || ! self::owns_post( $post ) ) {
 			return null;
 		}
 		return $post;
@@ -251,10 +283,14 @@ class SPD_REST_API {
 	/* ---------------------------------------------------------------- */
 
 	public static function serialize_franchise( $post ) {
+		// Scoped to the franchise's OWNER, not the current viewer, since a
+		// site admin browsing a customer's franchise should see that
+		// customer's linked projects -- never a mix of two customers' data.
 		$linked = get_posts( array(
 			'post_type'      => SPD_Post_Types::PROJECT,
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
+			'author'         => $post->post_author,
 			'meta_key'       => 'spd_franchise_id',
 			'meta_value'     => $post->ID,
 		) );
@@ -333,7 +369,8 @@ class SPD_REST_API {
 	/* ---------------------------------------------------------------- */
 
 	public static function get_dashboard() {
-		$projects = get_posts( array( 'post_type' => SPD_Post_Types::PROJECT, 'post_status' => 'publish', 'posts_per_page' => -1 ) );
+		$user_id  = get_current_user_id();
+		$projects = get_posts( array( 'post_type' => SPD_Post_Types::PROJECT, 'post_status' => 'publish', 'posts_per_page' => -1, 'author' => $user_id ) );
 
 		$genre_counts = array();
 		$type_counts  = array();
@@ -350,8 +387,11 @@ class SPD_REST_API {
 			$type_counts[ $type ] = ( $type_counts[ $type ] ?? 0 ) + 1;
 		}
 
-		$franchise_count = wp_count_posts( SPD_Post_Types::FRANCHISE )->publish ?? 0;
-		$character_count = wp_count_posts( SPD_Post_Types::CHARACTER )->publish ?? 0;
+		// wp_count_posts() has no author filter -- count_user_posts() does,
+		// and is exactly this: "how many published posts of this type does
+		// this one user have."
+		$franchise_count = count_user_posts( $user_id, SPD_Post_Types::FRANCHISE, true );
+		$character_count = count_user_posts( $user_id, SPD_Post_Types::CHARACTER, true );
 		$total           = count( $projects );
 
 		/**
@@ -380,8 +420,9 @@ class SPD_REST_API {
 			return $out;
 		};
 
+		$current_user = wp_get_current_user();
 		return rest_ensure_response( array(
-			'creator_name'       => self::get_profile_data()['name'] ?: get_bloginfo( 'name' ),
+			'creator_name'       => self::get_profile_data()['name'] ?: $current_user->display_name ?: get_bloginfo( 'name' ),
 			'total_projects'     => $total,
 			'franchises'         => (int) $franchise_count,
 			'characters'         => (int) $character_count,
@@ -396,16 +437,22 @@ class SPD_REST_API {
 	/* ---------------------------------------------------------------- */
 
 	public static function get_beatsheet( $request ) {
-		$id = (int) $request['id'];
+		$post = self::get_owned_post_of_type( $request['id'], SPD_Post_Types::PROJECT );
+		if ( ! $post ) {
+			return new WP_Error( 'spd_not_found', 'Project not found.', array( 'status' => 404 ) );
+		}
 		return rest_ensure_response( array(
-			'template'    => get_post_meta( $id, 'spd_beat_template', true ) ?: 'save_the_cat',
-			'total_pages' => (int) ( get_post_meta( $id, 'spd_total_pages', true ) ?: 100 ),
-			'beats'       => self::meta_json_get( $id, 'spd_beats' ),
+			'template'    => get_post_meta( $post->ID, 'spd_beat_template', true ) ?: 'save_the_cat',
+			'total_pages' => (int) ( get_post_meta( $post->ID, 'spd_total_pages', true ) ?: 100 ),
+			'beats'       => self::meta_json_get( $post->ID, 'spd_beats' ),
 		) );
 	}
 
 	public static function generate_beatsheet( $request ) {
-		$id          = (int) $request['id'];
+		$post = self::get_owned_post_of_type( $request['id'], SPD_Post_Types::PROJECT );
+		if ( ! $post ) {
+			return new WP_Error( 'spd_not_found', 'Project not found.', array( 'status' => 404 ) );
+		}
 		$template    = self::str_param( $request, 'template', 'save_the_cat' );
 		$total_pages = max( 1, (int) $request->get_param( 'total_pages' ) ?: 100 );
 
@@ -414,9 +461,9 @@ class SPD_REST_API {
 			return $beats;
 		}
 
-		update_post_meta( $id, 'spd_beat_template', $template );
-		update_post_meta( $id, 'spd_total_pages', $total_pages );
-		update_post_meta( $id, 'spd_beats', wp_json_encode( $beats ) );
+		update_post_meta( $post->ID, 'spd_beat_template', $template );
+		update_post_meta( $post->ID, 'spd_total_pages', $total_pages );
+		update_post_meta( $post->ID, 'spd_beats', wp_json_encode( $beats ) );
 
 		return rest_ensure_response( array(
 			'template'    => $template,
@@ -430,10 +477,13 @@ class SPD_REST_API {
 	/* ---------------------------------------------------------------- */
 
 	public static function get_imports( $request ) {
-		$project_id = (int) $request['id'];
-		$atts       = get_posts( array(
+		$project = self::get_owned_post_of_type( $request['id'], SPD_Post_Types::PROJECT );
+		if ( ! $project ) {
+			return new WP_Error( 'spd_not_found', 'Project not found.', array( 'status' => 404 ) );
+		}
+		$atts = get_posts( array(
 			'post_type'      => 'attachment',
-			'post_parent'    => $project_id,
+			'post_parent'    => $project->ID,
 			'posts_per_page' => -1,
 			'post_status'    => 'inherit',
 		) );
@@ -451,8 +501,8 @@ class SPD_REST_API {
 	}
 
 	public static function upload_import( $request ) {
-		$project_id = (int) $request['id'];
-		if ( ! get_post( $project_id ) ) {
+		$project = self::get_owned_post_of_type( $request['id'], SPD_Post_Types::PROJECT );
+		if ( ! $project ) {
 			return new WP_Error( 'spd_not_found', 'Project not found.', array( 'status' => 404 ) );
 		}
 
@@ -465,7 +515,7 @@ class SPD_REST_API {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 
-		$attachment_id = media_handle_upload( 'file', $project_id );
+		$attachment_id = media_handle_upload( 'file', $project->ID );
 		if ( is_wp_error( $attachment_id ) ) {
 			return $attachment_id;
 		}
@@ -482,8 +532,12 @@ class SPD_REST_API {
 	}
 
 	public static function delete_import( $request ) {
-		$id = (int) $request['id'];
-		if ( ! wp_attachment_is( 'document', $id ) && ! get_post( $id ) ) {
+		$id  = (int) $request['id'];
+		$att = get_post( $id );
+		// An import's ownership is its PARENT PROJECT's ownership -- the
+		// attachment itself has no owner-facing author field the app sets.
+		$project = $att ? self::get_owned_post_of_type( $att->post_parent, SPD_Post_Types::PROJECT ) : null;
+		if ( ! $att || ! wp_attachment_is( 'document', $id ) || ! $project ) {
 			return new WP_Error( 'spd_not_found', 'Not found.', array( 'status' => 404 ) );
 		}
 		wp_delete_attachment( $id, true );
@@ -494,7 +548,8 @@ class SPD_REST_API {
 	/* Profile                                                           */
 	/* ---------------------------------------------------------------- */
 
-	private static function get_profile_data() {
+	private static function get_profile_data( $user_id = null ) {
+		$user_id = $user_id ?: get_current_user_id();
 		$defaults = array(
 			'name'              => '',
 			'title'             => '',
@@ -516,7 +571,7 @@ class SPD_REST_API {
 			'awards'            => array(), // { name, org, year, project }
 			'public_profile'    => false,
 		);
-		$saved = get_option( 'spd_creator_profile', array() );
+		$saved = get_user_meta( $user_id, 'spd_creator_profile', true );
 		return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
 	}
 
@@ -551,7 +606,7 @@ class SPD_REST_API {
 		if ( null !== $request->get_param( 'public_profile' ) ) {
 			$data['public_profile'] = (bool) $request->get_param( 'public_profile' );
 		}
-		update_option( 'spd_creator_profile', $data );
+		update_user_meta( get_current_user_id(), 'spd_creator_profile', $data );
 		return rest_ensure_response( $data );
 	}
 
@@ -610,8 +665,14 @@ class SPD_REST_API {
 		);
 	}
 
+	/** Every customer's own plan -- also what gates MCP access to Studio-only. */
+	public static function current_plan( $user_id = null ) {
+		$user_id = $user_id ?: get_current_user_id();
+		return get_user_meta( $user_id, 'spd_billing_plan', true ) ?: 'creator';
+	}
+
 	public static function get_billing() {
-		$plan_id = get_option( 'spd_billing_plan', 'creator' );
+		$plan_id = self::current_plan();
 
 		return rest_ensure_response( array(
 			'current_plan'   => $plan_id,
@@ -619,5 +680,76 @@ class SPD_REST_API {
 			'payment_method' => null,
 			'note'           => 'Billing is informational only in this build — no payment processing is connected.',
 		) );
+	}
+
+	/* ---------------------------------------------------------------- */
+	/* Signup — real account creation                                    */
+	/* ---------------------------------------------------------------- */
+
+	/**
+	 * Creates a real, isolated WordPress account for a new customer and
+	 * logs them straight in. The signup form (see SPD_Public_Site::
+	 * render_signup()) never asks for a password -- like most modern
+	 * signup flows, WordPress generates a strong random one and emails the
+	 * new user a link to set their own for future logins, the same
+	 * "password reset" email core sends for any new account.
+	 */
+	public static function signup( $request ) {
+		// Honeypot: a real visitor never fills this hidden field in; a bot
+		// filling every field on the form will. Pretend success either way
+		// so a bot gets no signal that it was caught.
+		if ( ! empty( $request->get_param( 'website_url' ) ) ) {
+			return rest_ensure_response( array( 'ok' => true ) );
+		}
+
+		if ( ! wp_verify_nonce( (string) $request->get_param( '_wpnonce' ), 'spd_signup' ) ) {
+			return new WP_Error( 'spd_bad_nonce', 'This signup link has expired. Please reload the page and try again.', array( 'status' => 403 ) );
+		}
+
+		$name  = sanitize_text_field( $request->get_param( 'name' ) );
+		$email = sanitize_email( $request->get_param( 'email' ) );
+		if ( ! $name || ! is_email( $email ) ) {
+			return new WP_Error( 'spd_invalid', 'A name and a valid email address are required.', array( 'status' => 400 ) );
+		}
+		if ( email_exists( $email ) ) {
+			return new WP_Error( 'spd_exists', 'An account with that email already exists. Try signing in instead.', array( 'status' => 409 ) );
+		}
+
+		// Derive a unique username from the email's local part, since the
+		// signup form (matching the Figma design) never asks for one.
+		$base     = sanitize_user( current( explode( '@', $email ) ), true ) ?: 'creator';
+		$username = $base;
+		$suffix   = 1;
+		while ( username_exists( $username ) ) {
+			$suffix++;
+			$username = $base . $suffix;
+		}
+
+		$user_id = wp_create_user( $username, wp_generate_password( 20 ), $email );
+		if ( is_wp_error( $user_id ) ) {
+			return $user_id;
+		}
+
+		wp_update_user( array( 'ID' => $user_id, 'display_name' => $name, 'first_name' => $name ) );
+		$user = new WP_User( $user_id );
+		$user->set_role( SPD_Post_Types::ROLE );
+
+		update_user_meta( $user_id, 'spd_creator_profile', array(
+			'name'          => $name,
+			'company'       => sanitize_text_field( $request->get_param( 'company' ) ),
+			'title'         => sanitize_text_field( $request->get_param( 'title' ) ),
+			'creative_type' => sanitize_text_field( $request->get_param( 'creative_type' ) ),
+			'email'         => $email,
+		) );
+
+		// A real password-setup email, same one core sends for any new
+		// account -- their route back in if this browser session ends
+		// before they've set a password of their own.
+		wp_new_user_notification( $user_id, null, 'user' );
+
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true );
+
+		return rest_ensure_response( array( 'ok' => true, 'redirect' => admin_url() ) );
 	}
 }
