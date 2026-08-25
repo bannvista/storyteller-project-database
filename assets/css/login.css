@@ -1,0 +1,119 @@
+/* Restyles the default wp-login.php to match the plugin's dark/amber theme
+   (same palette as the public homepage) instead of the stock WordPress
+   grey screen. Pure CSS on top of core markup -- no core files touched,
+   nothing that breaks if WordPress changes internals beyond class names. */
+
+body.login {
+	background: #0b0b0d;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Wordmark: hide the default WordPress logo image but keep its (hidden,
+   accessible) link text intact for screen readers, and draw our own
+   text logo over the same box via ::before instead of a bitmap asset. */
+body.login #login h1 {
+	margin-bottom: 20px;
+}
+body.login #login h1 a {
+	background-image: none;
+	width: 240px;
+	height: 56px;
+	margin: 0 auto;
+	position: relative;
+	display: block;
+}
+body.login #login h1 a::before {
+	content: "Project Database";
+	position: absolute;
+	inset: 0;
+	text-indent: 0; /* undo the inherited -9999px WP core sets on the anchor
+	                   to hide its own text -- ::before inherits text-indent
+	                   from its host element, so without this the pseudo-
+	                   element's content shifts off-screen along with it. */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	font-size: 1.3rem;
+	letter-spacing: -0.01em;
+	color: #f2f0ec;
+}
+
+body.login #loginform,
+body.login #lostpasswordform,
+body.login #resetpassform,
+body.login #registerform {
+	background: #17171a;
+	border: 1px solid rgba(242, 240, 236, 0.12);
+	border-radius: 12px;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+body.login label {
+	color: #d9d8d4;
+}
+
+body.login input[type="text"],
+body.login input[type="password"],
+body.login input[type="email"] {
+	background: #0e0e10;
+	border: 1px solid rgba(242, 240, 236, 0.18);
+	color: #f2f0ec;
+	box-shadow: none;
+}
+body.login input[type="text"]:focus,
+body.login input[type="password"]:focus,
+body.login input[type="email"]:focus {
+	border-color: #e3b077;
+	box-shadow: 0 0 0 1px #e3b077;
+}
+
+body.login .button-primary {
+	background: #e3b077;
+	border-color: #e3b077;
+	color: #1a1408;
+	text-shadow: none;
+	box-shadow: none;
+	font-weight: 700;
+}
+body.login .button-primary:hover,
+body.login .button-primary:focus {
+	background: #ecc493;
+	border-color: #ecc493;
+	color: #1a1408;
+}
+
+body.login form .forgetmenot label {
+	color: #9a9ba1;
+}
+
+body.login #nav,
+body.login #backtoblog {
+	text-align: center;
+}
+body.login #nav a,
+body.login #backtoblog a {
+	color: #9a9ba1;
+}
+body.login #nav a:hover,
+body.login #backtoblog a:hover {
+	color: #e3b077;
+}
+
+body.login #login_error,
+body.login .message,
+body.login .success {
+	background: #0e0e10;
+	border-left: 4px solid #e3b077;
+	color: #f2f0ec;
+	box-shadow: none;
+}
+body.login #login_error a,
+body.login .message a,
+body.login .success a {
+	color: #e3b077;
+}
+
+body.login .privacy-policy-page-link {
+	text-align: center;
+}

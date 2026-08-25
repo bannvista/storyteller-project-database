@@ -23,6 +23,22 @@ class SPD_Public_Site {
 		add_action( 'init', array( __CLASS__, 'maybe_flush_rewrites' ), 20 );
 		add_filter( 'query_vars', array( __CLASS__, 'add_query_var' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ) );
+		add_action( 'login_enqueue_scripts', array( __CLASS__, 'login_styles' ) );
+		add_filter( 'login_headerurl', array( __CLASS__, 'login_header_url' ) );
+	}
+
+	/**
+	 * Restyles the stock wp-login.php to match the homepage's dark/amber
+	 * theme instead of leaving Sign In dropping visitors onto the plain
+	 * default WordPress screen. Pure CSS layered on top of core markup, so
+	 * it can't break a WordPress update the way editing core files would.
+	 */
+	public static function login_styles() {
+		echo '<link rel="stylesheet" href="' . esc_url( SPD_PLUGIN_URL . 'assets/css/login.css' ) . '?v=' . SPD_VERSION . '">';
+	}
+
+	public static function login_header_url() {
+		return self::home_url();
 	}
 
 	public static function register_rewrites() {
