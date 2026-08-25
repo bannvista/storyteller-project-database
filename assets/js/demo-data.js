@@ -23,21 +23,41 @@
 			{ id: 6, title: 'The Long Static', type: 'feature', stage: 'complete', logline: 'A radio DJ becomes the last line of communication during a nationwide blackout.', synopsis: '', progress: 100, genres: [ 'Thriller' ], franchise_id: 0, total_pages: 104, beat_template: 'save_the_cat', date: '2026-03-14' }
 		],
 		characters: [
-			{ id: 1, name: 'Detective Mara Voss', role: 'protagonist', project_id: 1, arc: 'From self-imposed exile to confronting the system she once protected.', traits: [ 'Morally complex', 'Driven', 'Isolated' ] },
-			{ id: 2, name: 'The Architect', role: 'antagonist', project_id: 2, arc: 'Revealed as the hidden orchestrator of the timeline fractures.', traits: [ 'Mysterious', 'Calculating', 'Tragic' ] },
-			{ id: 3, name: 'Eli Ashwood', role: 'protagonist', project_id: 3, arc: 'From denial to confronting generational trauma.', traits: [ 'Analytical', 'Haunted', 'Determined' ] },
-			{ id: 4, name: 'Sera Kline', role: 'supporting', project_id: 2, arc: 'The one constant across every parallel life.', traits: [ 'Loyal', 'Guarded' ] }
+			{ id: 1, name: 'Detective Mara Voss', role: 'protagonist', project_id: 1, arc: 'From self-imposed exile to confronting the system she once protected.', traits: [ 'Morally complex', 'Driven', 'Isolated' ],
+				archetype: 'Fallen Hero', personality: 'Tenacious, Guarded, Perceptive', motivation: 'Justice for her partner', strength: 'Intuition, Interrogation', flaw: 'Obsession, Mistrust',
+				description: 'A decorated detective who resigned from the force after her partner’s death under suspicious circumstances. She lives off-grid, running routine case work for local firms.',
+				relationships: [ { name: 'Director Halse', rel: 'Former superior, antagonist' }, { name: 'Nix', rel: 'Reluctant informant, ally' } ] },
+			{ id: 2, name: 'The Architect', role: 'antagonist', project_id: 2, arc: 'Revealed as the hidden orchestrator of the timeline fractures.', traits: [ 'Mysterious', 'Calculating', 'Tragic' ],
+				archetype: 'Shadow', personality: 'Detached, Precise, Patient', motivation: 'Preserve the one timeline it believes is real', strength: 'Foresight, Planning', flaw: 'Certainty',
+				description: 'A figure who moves between timelines, quietly steering events toward a single preferred outcome.', relationships: [] },
+			{ id: 3, name: 'Eli Ashwood', role: 'protagonist', project_id: 3, arc: 'From denial to confronting generational trauma.', traits: [ 'Analytical', 'Haunted', 'Determined' ],
+				archetype: 'Reluctant Heir', personality: 'Methodical, Private', motivation: 'Understand her grandmother’s past', strength: 'Research, Patience', flaw: 'Avoidance',
+				description: 'A forensic archivist who inherits a Victorian estate and finds her grandmother’s journals inside it.', relationships: [] },
+			{ id: 4, name: 'Sera Kline', role: 'supporting', project_id: 2, arc: 'The one constant across every parallel life.', traits: [ 'Loyal', 'Guarded' ],
+				archetype: 'Anchor', personality: 'Steady, Watchful', motivation: 'Keep the group together across timelines', strength: 'Empathy', flaw: 'Self-sacrifice', description: '', relationships: [] }
 		],
 		imports: {},
 		profile: {
 			name: 'Jordan Mercer', title: 'Screenwriter & Producer', company: 'Meridian Films Inc.', location: 'Los Angeles, CA',
-			email: 'jordan@meridianfilms.com', website: 'meridianfilms.com', linkedin: 'linkedin.com/in/jordanmercer',
+			email: 'jordan@meridianfilms.com', phone: '+1 (310) 555-0182', website: 'meridianfilms.com', linkedin: 'linkedin.com/in/jordanmercer', imdb: 'imdb.com/name/nm0000000',
 			bio: 'Jordan Mercer is a Los Angeles-based screenwriter and producer with over a decade of experience developing feature films and television projects. Known for character-driven narratives that blend genre and literary ambition, Jordan has developed projects for major studios and independent financiers.',
 			short_bio: 'Screenwriter & Producer · Meridian Films Inc. · Sundance Lab Alum',
 			creative_statement: 'I write stories about people at the edges of what they believe — genre as a lens for intimate truth.',
-			expertise: [ 'Feature Screenwriting', 'TV Pilots', 'Adaptation', 'Story Editing' ]
+			expertise: [ 'Feature Development', 'TV Pilot Writing', 'Story Architecture', 'Script Coverage', 'Production Development' ],
+			genres: [ 'Sci-Fi', 'Thriller', 'Drama' ],
+			formats: [ 'Feature Film', 'TV Pilot', 'Short Film' ],
+			skills: [ 'Screenwriting', 'Film Development', 'Story Development', 'Producing', 'Project Management', 'Script Coverage', 'Adaptation' ],
+			experience: [
+				{ role: 'Staff Writer', company: 'Apex Television', period: '2021 – Present', desc: 'Developed and wrote episodic content for drama series in active development.' },
+				{ role: 'Development Executive', company: 'Meridian Films Inc.', period: '2018 – 2021', desc: 'Oversaw story development on 12+ feature projects from concept through financing.' }
+			],
+			awards: [
+				{ name: 'Best Screenplay', org: 'Sundance Film Festival Lab', year: '2022', project: 'The Meridian' },
+				{ name: 'Nicholl Fellowship Quarterfinalist', org: 'Academy of Motion Picture Arts and Sciences', year: '2020', project: 'Dark Frequencies' }
+			],
+			public_profile: false
 		},
-		billing_plan: 'creator_free'
+		billing_plan: 'creator'
 	};
 
 	var BEAT_TEMPLATES = {
@@ -132,15 +152,19 @@
 				p.genres.forEach( function ( g ) { genreCounts[ g ] = ( genreCounts[ g ] || 0 ) + 1; } );
 				typeCounts[ p.type ] = ( typeCounts[ p.type ] || 0 ) + 1;
 			} );
-			var total = store.projects.length;
+			// Normalize each distribution against its OWN total, not the
+			// project count: a project can carry more than one genre, so
+			// genre counts summed against the project total can exceed
+			// 100% and wrap the donut's conic-gradient/label angles.
 			function toDist( counts ) {
+				var sum = Object.keys( counts ).reduce( function ( s, k ) { return s + counts[ k ]; }, 0 );
 				return Object.keys( counts ).map( function ( label ) {
-					return { label: label, count: counts[ label ], percent: total ? Math.round( ( counts[ label ] / total ) * 100 ) : 0 };
+					return { label: label, count: counts[ label ], percent: sum ? Math.round( ( counts[ label ] / sum ) * 100 ) : 0 };
 				} ).sort( function ( a, b ) { return b.count - a.count; } );
 			}
 			return json( {
 				creator_name: store.profile.name.split( ' ' )[0],
-				total_projects: total,
+				total_projects: store.projects.length,
 				franchises: store.franchises.length,
 				characters: store.characters.length,
 				complete: complete,
@@ -195,7 +219,9 @@
 
 		if ( path === 'characters' && method === 'GET' ) { return json( store.characters.map( serializeCharacter ) ); }
 		if ( path === 'characters' && method === 'POST' ) {
-			var nc = { id: nextId++, name: body.title || 'Untitled', role: body.role || 'protagonist', project_id: parseInt( body.project_id, 10 ) || 0, arc: body.arc || '', traits: body.traits || [] };
+			var nc = { id: nextId++, name: body.title || 'Untitled', role: body.role || 'protagonist', project_id: parseInt( body.project_id, 10 ) || 0, arc: body.arc || '', traits: body.traits || [],
+				archetype: body.archetype || '', personality: body.personality || '', motivation: body.motivation || '', strength: body.strength || '', flaw: body.flaw || '',
+				description: body.description || '', relationships: body.relationships || [] };
 			store.characters.unshift( nc );
 			return json( serializeCharacter( nc ) );
 		}
@@ -205,7 +231,11 @@
 			if ( cidx === -1 ) { return notFound(); }
 			if ( method === 'GET' ) { return json( serializeCharacter( store.characters[ cidx ] ) ); }
 			if ( method === 'PUT' ) {
-				Object.assign( store.characters[ cidx ], { name: body.title || store.characters[ cidx ].name, role: body.role, project_id: parseInt( body.project_id, 10 ) || 0, arc: body.arc || '', traits: body.traits || [] } );
+				Object.assign( store.characters[ cidx ], {
+					name: body.title || store.characters[ cidx ].name, role: body.role, project_id: parseInt( body.project_id, 10 ) || 0, arc: body.arc || '', traits: body.traits || [],
+					archetype: body.archetype || '', personality: body.personality || '', motivation: body.motivation || '', strength: body.strength || '', flaw: body.flaw || '',
+					description: body.description || '', relationships: body.relationships || []
+				} );
 				return json( serializeCharacter( store.characters[ cidx ] ) );
 			}
 			if ( method === 'DELETE' ) { store.characters.splice( cidx, 1 ); return json( { deleted: true } ); }
@@ -255,8 +285,12 @@
 			return json( {
 				current_plan: store.billing_plan,
 				plans: [
-					{ id: 'creator_free', name: 'Creator — Free', price: 0, period: '', features: [ 'Up to 5 projects', 'Logline builder', 'Community access', 'Basic character profiles', 'Beat sheet calculator' ] },
-					{ id: 'pro', name: 'Pro', price: 8, period: '/mo', features: [ 'Unlimited projects', 'Creative IP record', 'Advanced exports', 'Priority support' ] }
+					{ id: 'creator', name: 'Creator', tagline: 'Start building your creative universe.', price: 0, price_annual: 0, period: '', ribbon: null,
+						features: [ 'Up to 15 Projects', 'Up to 3 Franchises', 'Unlimited Loglines', '50 Characters', 'Basic Project Database', 'Project Workspace', 'Basic Tags & Metadata', 'PDF Exports', '2 GB Cloud Storage', 'Offline Access', 'Public Creator Profile' ] },
+					{ id: 'pro', name: 'Pro', tagline: 'For creators actively developing stories and franchises.', price: 8, price_annual: 79, period: '/mo', ribbon: 'Most Popular',
+						features: [ 'Everything in Creator, plus:', 'Unlimited Projects', 'Unlimited Franchises', 'Unlimited Characters', 'Character Database', 'Beat Sheet Calculator', 'Relationship Mapping', 'Import Assets', 'Advanced Exports', '25 GB Cloud Storage', 'Franchise Database', 'Priority Support' ] },
+					{ id: 'studio', name: 'Studio', tagline: 'For serious creators, teams, and production companies.', price: 19, price_annual: 190, period: '/mo', ribbon: null,
+						features: [ 'Everything in Pro, plus:', 'Team Workspace', 'Project Analytics', 'Development Progress Tracking', 'Collaboration Workspace', 'Team Permissions', 'Shared Libraries', 'Version History', '100 GB Cloud Storage', 'Advanced Exports', 'Priority Feature Access', 'Beta Testing Program' ] }
 				]
 			} );
 		}

@@ -171,6 +171,19 @@ class SPD_REST_API {
 		update_post_meta( $post_id, $key, wp_json_encode( array_values( array_map( 'sanitize_text_field', $value ) ) ) );
 	}
 
+	/**
+	 * Same as meta_json_get/set but for arrays of associative objects
+	 * (relationships, experience, awards) rather than flat string lists --
+	 * each item's values still go through sanitize_text_field individually.
+	 */
+	private static function meta_json_object_list_set( $post_id, $key, $value ) {
+		$value = is_array( $value ) ? $value : array();
+		$clean = array_values( array_map( function ( $row ) {
+			return is_array( $row ) ? array_map( 'sanitize_text_field', $row ) : array();
+		}, $value ) );
+		update_post_meta( $post_id, $key, wp_json_encode( $clean ) );
+	}
+
 	private static function str_param( $request, $key, $default = '' ) {
 		$val = $request->get_param( $key );
 		return null === $val ? $default : sanitize_text_field( $val );
@@ -287,6 +300,13 @@ class SPD_REST_API {
 			'project_name' => $project_id ? get_the_title( $project_id ) : '',
 			'arc'          => get_post_meta( $post->ID, 'spd_arc', true ),
 			'traits'       => self::meta_json_get( $post->ID, 'spd_traits' ),
+			'archetype'    => get_post_meta( $post->ID, 'spd_archetype', true ),
+			'personality'  => get_post_meta( $post->ID, 'spd_personality', true ),
+			'motivation'   => get_post_meta( $post->ID, 'spd_motivation', true ),
+			'strength'     => get_post_meta( $post->ID, 'spd_strength', true ),
+			'flaw'         => get_post_meta( $post->ID, 'spd_flaw', true ),
+			'description'  => get_post_meta( $post->ID, 'spd_description', true ),
+			'relationships'=> self::meta_json_get( $post->ID, 'spd_relationships' ),
 		);
 	}
 
@@ -294,8 +314,17 @@ class SPD_REST_API {
 		self::maybe_update_meta( $id, $request, 'role', 'spd_role', 'sanitize_text_field' );
 		self::maybe_update_meta( $id, $request, 'project_id', 'spd_project_id', 'intval' );
 		self::maybe_update_meta( $id, $request, 'arc', 'spd_arc', 'sanitize_textarea_field' );
+		self::maybe_update_meta( $id, $request, 'archetype', 'spd_archetype', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'personality', 'spd_personality', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'motivation', 'spd_motivation', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'strength', 'spd_strength', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'flaw', 'spd_flaw', 'sanitize_text_field' );
+		self::maybe_update_meta( $id, $request, 'description', 'spd_description', 'sanitize_textarea_field' );
 		if ( null !== $request->get_param( 'traits' ) ) {
 			self::meta_json_set( $id, 'spd_traits', (array) $request->get_param( 'traits' ) );
+		}
+		if ( null !== $request->get_param( 'relationships' ) ) {
+			self::meta_json_object_list_set( $id, 'spd_relationships', (array) $request->get_param( 'relationships' ) );
 		}
 	}
 
@@ -325,13 +354,26 @@ class SPD_REST_API {
 		$character_count = wp_count_posts( SPD_Post_Types::CHARACTER )->publish ?? 0;
 		$total           = count( $projects );
 
-		$to_distribution = function ( $counts ) use ( $total ) {
+		/**
+		 * Normalizes each distribution against the SUM OF ITS OWN counts, not
+		 * against the project total. A project can carry more than one genre
+		 * (unlike type, which is exactly one per project), so genre counts
+		 * summed against the project total routinely exceed 100% -- e.g. two
+		 * genres tagged on every project would total 200%. Fed straight into
+		 * a conic-gradient/pie, stops past 100% wrap back over the start of
+		 * the circle, which is what caused two of the donut's polar-position
+		 * labels to render on top of each other instead of at genuinely
+		 * distinct angles. Normalizing per-distribution keeps every pie's
+		 * own slices summing to exactly 100%, whatever it's a distribution of.
+		 */
+		$to_distribution = function ( $counts ) {
+			$sum = array_sum( $counts );
 			$out = array();
 			foreach ( $counts as $label => $count ) {
 				$out[] = array(
 					'label'   => $label,
 					'count'   => $count,
-					'percent' => $total ? round( ( $count / $total ) * 100 ) : 0,
+					'percent' => $sum ? round( ( $count / $sum ) * 100 ) : 0,
 				);
 			}
 			usort( $out, function ( $a, $b ) { return $b['count'] <=> $a['count']; } );
@@ -459,12 +501,20 @@ class SPD_REST_API {
 			'company'           => '',
 			'location'          => '',
 			'email'             => '',
+			'phone'             => '',
 			'website'           => '',
 			'linkedin'          => '',
+			'imdb'              => '',
 			'bio'               => '',
 			'short_bio'         => '',
 			'creative_statement'=> '',
 			'expertise'         => array(),
+			'genres'            => array(),
+			'formats'           => array(),
+			'skills'            => array(),
+			'experience'        => array(), // { role, company, period, desc }
+			'awards'            => array(), // { name, org, year, project }
+			'public_profile'    => false,
 		);
 		$saved = get_option( 'spd_creator_profile', array() );
 		return wp_parse_args( is_array( $saved ) ? $saved : array(), $defaults );
@@ -476,7 +526,7 @@ class SPD_REST_API {
 
 	public static function save_profile( $request ) {
 		$data = self::get_profile_data();
-		foreach ( array( 'name', 'title', 'company', 'location', 'email', 'website', 'linkedin' ) as $key ) {
+		foreach ( array( 'name', 'title', 'company', 'location', 'email', 'phone', 'website', 'linkedin', 'imdb' ) as $key ) {
 			if ( null !== $request->get_param( $key ) ) {
 				$data[ $key ] = sanitize_text_field( $request->get_param( $key ) );
 			}
@@ -486,8 +536,20 @@ class SPD_REST_API {
 				$data[ $key ] = sanitize_textarea_field( $request->get_param( $key ) );
 			}
 		}
-		if ( null !== $request->get_param( 'expertise' ) ) {
-			$data['expertise'] = array_values( array_map( 'sanitize_text_field', (array) $request->get_param( 'expertise' ) ) );
+		foreach ( array( 'expertise', 'genres', 'formats', 'skills' ) as $key ) {
+			if ( null !== $request->get_param( $key ) ) {
+				$data[ $key ] = array_values( array_map( 'sanitize_text_field', (array) $request->get_param( $key ) ) );
+			}
+		}
+		foreach ( array( 'experience', 'awards' ) as $key ) {
+			if ( null !== $request->get_param( $key ) ) {
+				$data[ $key ] = array_values( array_map( function ( $row ) {
+					return is_array( $row ) ? array_map( 'sanitize_text_field', $row ) : array();
+				}, (array) $request->get_param( $key ) ) );
+			}
+		}
+		if ( null !== $request->get_param( 'public_profile' ) ) {
+			$data['public_profile'] = (bool) $request->get_param( 'public_profile' );
 		}
 		update_option( 'spd_creator_profile', $data );
 		return rest_ensure_response( $data );
@@ -504,24 +566,52 @@ class SPD_REST_API {
 	public static function plans_data() {
 		return array(
 			array(
-				'id'       => 'creator_free',
-				'name'     => 'Creator — Free',
-				'price'    => 0,
-				'period'   => '',
-				'features' => array( 'Up to 5 projects', 'Logline builder', 'Community access', 'Basic character profiles', 'Beat sheet calculator' ),
+				'id'          => 'creator',
+				'name'        => 'Creator',
+				'tagline'     => 'Start building your creative universe.',
+				'price'       => 0,
+				'price_annual'=> 0,
+				'period'      => '',
+				'ribbon'      => null,
+				'features'    => array(
+					'Up to 15 Projects', 'Up to 3 Franchises', 'Unlimited Loglines', '50 Characters',
+					'Basic Project Database', 'Project Workspace', 'Basic Tags & Metadata', 'PDF Exports',
+					'2 GB Cloud Storage', 'Offline Access', 'Public Creator Profile',
+				),
 			),
 			array(
-				'id'       => 'pro',
-				'name'     => 'Pro',
-				'price'    => 8,
-				'period'   => '/mo',
-				'features' => array( 'Unlimited projects', 'Creative IP record', 'Advanced exports', 'Priority support' ),
+				'id'          => 'pro',
+				'name'        => 'Pro',
+				'tagline'     => 'For creators actively developing stories and franchises.',
+				'price'       => 8,
+				'price_annual'=> 79,
+				'period'      => '/mo',
+				'ribbon'      => 'Most Popular',
+				'features'    => array(
+					'Everything in Creator, plus:', 'Unlimited Projects', 'Unlimited Franchises', 'Unlimited Characters',
+					'Character Database', 'Beat Sheet Calculator', 'Relationship Mapping', 'Import Assets',
+					'Advanced Exports', '25 GB Cloud Storage', 'Franchise Database', 'Priority Support',
+				),
+			),
+			array(
+				'id'          => 'studio',
+				'name'        => 'Studio',
+				'tagline'     => 'For serious creators, teams, and production companies.',
+				'price'       => 19,
+				'price_annual'=> 190,
+				'period'      => '/mo',
+				'ribbon'      => null,
+				'features'    => array(
+					'Everything in Pro, plus:', 'Team Workspace', 'Project Analytics', 'Development Progress Tracking',
+					'Collaboration Workspace', 'Team Permissions', 'Shared Libraries', 'Version History',
+					'100 GB Cloud Storage', 'Advanced Exports', 'Priority Feature Access', 'Beta Testing Program',
+				),
 			),
 		);
 	}
 
 	public static function get_billing() {
-		$plan_id = get_option( 'spd_billing_plan', 'creator_free' );
+		$plan_id = get_option( 'spd_billing_plan', 'creator' );
 
 		return rest_ensure_response( array(
 			'current_plan'   => $plan_id,

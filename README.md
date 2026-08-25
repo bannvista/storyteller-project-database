@@ -19,20 +19,15 @@ administrators) can access it — there is no public-facing page or signup
 flow, by design.
 
 A public marketing homepage lives at `yoursite.com/storyteller-database/`,
-with a sandboxed demo (sample data, nothing saved) at
-`yoursite.com/storyteller-database/demo/`. Both work regardless of your
-active theme.
+matching the Figma design exactly (nav, hero, dashboard preview, features,
+pricing, footer). A signup page at `/storyteller-database/signup/` and a
+sandboxed demo (sample data, nothing saved) at `/storyteller-database/demo/`
+round it out. All three work regardless of your active theme.
 
-The homepage is a scroll-driven page built with the
-[scrollcraft](https://github.com/nateherkai/scroll-craft) engine (MIT —
-vendored unmodified as `assets/*/scrollcraft-engine.*`; see
-`third-party-licenses/`): the dashboard stats count up, the databases
-section reveals real linked records, and the Beat Sheet Calculator section
-assembles its table row by row as you scroll, computed live from the same
-Save-the-Cat math the real calculator uses. All of it is the same labelled
-sample data as the `/demo/` page — never your real private projects, since
-this page is public. Typing a title into the "Start in the demo" field on
-the pricing section carries it straight into the demo's New Project form.
+The signup form and the demo never touch your real data — this is a
+single-user tool (real access stays admin-only via `wp-login.php`), so
+"Create Workspace" just carries the typed name into the sandboxed demo
+rather than creating an actual WordPress account.
 
 If the rewrite rules don't resolve right after activating
 (a 404 on those URLs), go to **Settings → Permalinks** and click **Save
@@ -77,9 +72,14 @@ the normal `wp-login.php` screen automatically — nothing else to wire up.
 - Projects, franchises, characters, the beat sheet calculator, and file
   imports/exports are fully functional and backed by WordPress's own
   database (custom post types + post meta) and media library.
-- The **Billing** screen shows the plan/pricing UI from the design but does
-  not process real payments — no Stripe or other billing integration is
-  wired up.
+- The **Billing** screen and pricing modal show the real three-tier
+  Creator/Pro/Studio plan UI from the design but do not process real
+  payments — no Stripe or other billing integration is wired up. Anything
+  marked **Pro** (Creative IP Record, Professional Documents) or **Soon**
+  (AI Chat, Public Creator Profile) is a locked preview, matching the design.
+- The **Creator Profile** (bio, experience, skills, awards, contact info)
+  is fully real and saved via WordPress options — only its "Professional
+  Documents" export and "Public Profile" sections are Pro/Soon previews.
 - File imports store and attach the uploaded file for reference; they do
   not parse the contents of `.fdx` / `.docx` / `.pdf` files into structured
   data.

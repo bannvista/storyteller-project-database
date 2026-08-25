@@ -34,7 +34,8 @@ class SPD_Admin_Page {
 			return;
 		}
 
-		wp_enqueue_style( 'spd-app', SPD_PLUGIN_URL . 'assets/css/app.css', array(), SPD_VERSION );
+		wp_enqueue_style( 'spd-fonts', 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap', array(), null );
+		wp_enqueue_style( 'spd-app', SPD_PLUGIN_URL . 'assets/css/app.css', array( 'spd-fonts' ), SPD_VERSION );
 		wp_enqueue_script( 'spd-app', SPD_PLUGIN_URL . 'assets/js/app.js', array(), SPD_VERSION, true );
 
 		wp_localize_script( 'spd-app', 'SPD', array(
@@ -57,7 +58,7 @@ class SPD_Admin_Page {
 				#wpadminbar, #adminmenumain, #wpfooter, #screen-meta-links, .update-nag, .notice { display: none !important; }
 				#wpcontent, #wpbody-content { margin-left: 0 !important; padding: 0 !important; }
 				#wpbody { padding-top: 0 !important; }
-				html, body { background: #0b0b0d !important; }
+				html, body { background: #0B0B0F !important; }
 			</style>
 			<?php
 		} );

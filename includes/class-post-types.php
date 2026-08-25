@@ -69,9 +69,15 @@ class SPD_Post_Types {
 				'spd_beat_template' => 'save_the_cat',
 			),
 			self::CHARACTER => array(
-				'spd_role'       => 'protagonist',
-				'spd_project_id' => '',
-				'spd_arc'        => '',
+				'spd_role'        => 'protagonist',
+				'spd_project_id'  => '',
+				'spd_arc'         => '',
+				'spd_archetype'   => '',
+				'spd_personality' => '',
+				'spd_motivation'  => '',
+				'spd_strength'    => '',
+				'spd_flaw'        => '',
+				'spd_description' => '',
 			),
 			self::FRANCHISE => array(
 				'spd_status' => 'development',
@@ -108,7 +114,7 @@ class SPD_Post_Types {
 
 		$array_fields = array(
 			self::PROJECT   => array( 'spd_genres', 'spd_beats' ),
-			self::CHARACTER => array( 'spd_traits' ),
+			self::CHARACTER => array( 'spd_traits', 'spd_relationships' ),
 			self::FRANCHISE => array( 'spd_genres' ),
 		);
 

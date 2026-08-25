@@ -43,6 +43,7 @@ class SPD_Public_Site {
 
 	public static function register_rewrites() {
 		add_rewrite_rule( '^' . self::BASE . '/demo/?$', 'index.php?spd_page=demo', 'top' );
+		add_rewrite_rule( '^' . self::BASE . '/signup/?$', 'index.php?spd_page=signup', 'top' );
 		add_rewrite_rule( '^' . self::BASE . '/?$', 'index.php?spd_page=home', 'top' );
 	}
 
@@ -80,10 +81,18 @@ class SPD_Public_Site {
 		return home_url( '/' . self::BASE . '/demo/' );
 	}
 
+	public static function signup_url() {
+		return home_url( '/' . self::BASE . '/signup/' );
+	}
+
 	public static function maybe_render() {
 		$page = get_query_var( 'spd_page' );
 		if ( 'home' === $page ) {
 			self::render_home();
+			exit;
+		}
+		if ( 'signup' === $page ) {
+			self::render_signup();
 			exit;
 		}
 		if ( 'demo' === $page ) {
@@ -97,17 +106,30 @@ class SPD_Public_Site {
 			'<link rel="stylesheet" href="' . esc_url( SPD_PLUGIN_URL . 'assets/css/app.css' ) . '?v=' . SPD_VERSION . '">';
 	}
 
+	private static function google_fonts_tag() {
+		return '<link rel="preconnect" href="https://fonts.googleapis.com">' .
+			'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' .
+			'<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">';
+	}
+
+	private static function nav_signin_link( $signin_url ) {
+		if ( shortcode_exists( 'nextend_social_login' ) ) {
+			return do_shortcode( '[nextend_social_login provider="google" redirect="' . esc_attr( admin_url() ) . '"]' );
+		}
+		return '<a class="lp-btn lp-btn-ghost lp-btn-sm" href="' . esc_url( $signin_url ) . '">Sign In</a>';
+	}
+
 	/**
-	 * The homepage is a scroll-driven "Live Surface" page built with the
-	 * scrollcraft engine (github.com/nateherkai/scroll-craft, MIT —
-	 * vendored unmodified in assets/*​/scrollcraft-engine.*, see
-	 * third-party-licenses/). The dashboard/database/beat-sheet content is
-	 * the same labelled sample data as the sandboxed demo — never the real
-	 * site owner's private records, since this page is public.
+	 * A conventional static SaaS marketing page — matches the Figma Make
+	 * source's Landing() component exactly (nav, hero, dashboard mockup
+	 * preview, features grid, pricing preview, footer). The dashboard
+	 * preview shows the same labelled sample data as the sandboxed demo —
+	 * never the real site owner's private records, since this page is public.
 	 */
 	public static function render_home() {
 		$plans      = SPD_REST_API::plans_data();
 		$demo_url   = self::demo_url();
+		$signup_url = self::signup_url();
 		$signin_url = esc_url( wp_login_url() );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
@@ -117,158 +139,218 @@ class SPD_Public_Site {
 		<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-		<title>Project Database · the story tool that already has your work in it</title>
-		<meta name="description" content="A project, character, and franchise database for storytellers, with a beat sheet that builds itself as you scroll.">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/scrollcraft-engine.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
-		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/homepage-scroll.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
+		<title>Project Database — Your Creative Project Library. Organized.</title>
+		<meta name="description" content="A project, character, and franchise database for storytellers, with a beat sheet calculator, file imports/exports, and a creator profile.">
+		<?php echo self::google_fonts_tag(); ?>
+		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/homepage.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
 		</head>
 		<body>
 
-		<span data-sc-progress></span>
-		<div class="sc-grain" aria-hidden="true"></div>
+		<nav class="lp-nav">
+			<div class="lp-mark"><div class="lp-mark-icon">🎬</div><div><div class="lp-mark-title">Project Database</div><div class="lp-mark-sub">for Storytellers</div></div></div>
+			<div class="lp-navlinks">
+				<a href="#lp-features">Features</a>
+				<a href="<?php echo esc_url( $demo_url ); ?>">Demo</a>
+				<a href="#lp-pricing">Pricing</a>
+			</div>
+			<div class="lp-nav-actions">
+				<?php echo self::nav_signin_link( $signin_url ); ?>
+				<a class="lp-btn lp-btn-primary lp-btn-sm" href="<?php echo esc_url( $signup_url ); ?>">Start Free</a>
+			</div>
+		</nav>
 
-		<header class="appbar">
-			<div class="appbar__mark"><span>P</span> Project Database</div>
-			<nav class="appbar__tabs">
-				<a href="#dashboard">Dashboard</a>
-				<a href="#databases">Databases</a>
-				<a href="#beatsheet">Beat Sheet</a>
-				<a href="#imports">Imports</a>
-				<a href="#pricing">Pricing</a>
-				<?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
-					<?php echo do_shortcode( '[nextend_social_login provider="google" redirect="' . esc_attr( admin_url() ) . '"]' ); ?>
-				<?php else : ?>
-					<a href="<?php echo $signin_url; ?>">Sign In</a>
-				<?php endif; ?>
-			</nav>
-		</header>
+		<section class="lp-hero">
+			<h1>Your Creative Project<br>Library. <em>Organized.</em></h1>
+			<p class="lp-sub">Store loglines, build characters, track franchises, calculate beats, and develop every story from one professional workspace.</p>
+			<div class="lp-cta-row">
+				<a class="lp-btn lp-btn-primary lp-btn-lg" href="<?php echo esc_url( $signup_url ); ?>">Start Free →</a>
+				<a class="lp-btn lp-btn-secondary lp-btn-lg" href="<?php echo esc_url( $demo_url ); ?>">View Demo</a>
+			</div>
+			<p class="lp-hero-note">No credit card required · Free forever plan available</p>
+		</section>
 
-		<main>
-
-			<!-- ACT 1 · Recognition — the dashboard, already populated. Static on
-			     load (no pin, no fade-in): the reader should never have to
-			     scroll to see this. The four stat numbers auto-count once,
-			     like a looping gif, the moment the section is on screen — see
-			     the .js-autocount block in homepage-scroll.js. No .sc-section
-			     class here on purpose: .spd-stage-flex already supplies the
-			     vertical padding, so adding it too would double the gap. -->
-			<section id="dashboard" data-sc-act="flow" data-sc-drift="#0b0b0d">
-				<div class="sc-wrap spd-stage-flex" style="justify-content:center; gap:var(--sc-4);">
-					<p class="sample-note">Live sample data, this is the real dashboard, seeded for the demo</p>
-					<div>
-						<h1 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-2)">Good morning. Your library is already here.</h1>
-						<p class="sc-body">No empty state, no setup wizard: six projects, two franchises, four characters, already organized.</p>
+		<div class="lp-mockup-wrap">
+			<div class="lp-mockup">
+				<div class="lp-mockup-bar">
+					<span class="lp-mockup-dot" style="background:#FF5F57"></span>
+					<span class="lp-mockup-dot" style="background:#FEBC2E"></span>
+					<span class="lp-mockup-dot" style="background:#28C840"></span>
+					<span class="lp-mockup-url">projectdatabase.app/dashboard</span>
+				</div>
+				<div class="lp-mockup-body">
+					<div class="lp-mockup-sidebar">
+						<div class="lp-mockup-nav-item active">▦ Dashboard</div>
+						<div class="lp-mockup-nav-item">📁 Project Database</div>
+						<div class="lp-mockup-nav-item">🔀 Franchise Database</div>
+						<div class="lp-mockup-nav-item">👥 Character Database</div>
+						<div class="lp-mockup-nav-item">📊 Beat Sheet Calculator</div>
 					</div>
-					<div class="stat-grid">
-						<div class="surface-card"><div class="stat-label">Total Projects</div><div class="stat-value"><span class="js-autocount" data-count-to="6">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Franchises</div><div class="stat-value"><span class="js-autocount" data-count-to="2">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Characters</div><div class="stat-value"><span class="js-autocount" data-count-to="4">0</span></div></div>
-						<div class="surface-card"><div class="stat-label">Complete</div><div class="stat-value"><span class="js-autocount" data-count-to="1">0</span></div></div>
+					<div class="lp-mockup-main">
+						<div class="lp-mockup-toprow"><span>Good morning, Jordan.</span><span class="lp-mockup-newbtn">+ New Project</span></div>
+						<div class="lp-mockup-stats">
+							<div class="lp-mockup-stat"><div class="v">6</div><div class="l">Projects</div></div>
+							<div class="lp-mockup-stat"><div class="v">2</div><div class="l">Franchises</div></div>
+							<div class="lp-mockup-stat"><div class="v">4</div><div class="l">Characters</div></div>
+							<div class="lp-mockup-stat"><div class="v">1</div><div class="l">Complete</div></div>
+						</div>
+						<div class="lp-mockup-row"><span class="icon">🎬</span><span class="name">Neon Requiem</span><span class="badge">Script</span></div>
+						<div class="lp-mockup-row"><span class="icon">📺</span><span class="name">The Glass Meridian</span><span class="badge">Pitch</span></div>
+						<div class="lp-mockup-row"><span class="icon">📖</span><span class="name">Ashwood</span><span class="badge">Outline</span></div>
 					</div>
 				</div>
-			</section>
+			</div>
+		</div>
 
-			<!-- ACT 2 · Substance — the databases are real, linked records. flow + in -->
-			<section class="sc-section" data-sc-act="flow" data-sc-drift="#101115">
-				<div class="sc-wrap">
-					<div class="sc-stack" data-sc-in style="margin-bottom:var(--sc-8)">
-						<h2 class="sc-display sc-display--md">Projects, franchises, and characters: actually linked.</h2>
-						<p class="sc-body">Not three separate lists. A character points at a project, a project points at a franchise, and the franchise page shows every linked project back.</p>
+		<section class="lp-section" id="lp-features">
+			<div class="lp-section-inner">
+				<p class="lp-eyebrow">Platform Features</p>
+				<h2 class="lp-h2">Everything a storyteller needs,<br><em>in one place.</em></h2>
+				<div class="lp-features-grid">
+					<?php
+					$features = array(
+						array( '📁', 'Project Database', 'Centralize every film, series, novel, script, and concept in one organized library.' ),
+						array( '🔀', 'Franchise Tracker', 'Build shared universes. Connect projects across IPs, timelines, and formats.' ),
+						array( '👥', 'Character Database', 'Store arcs, traits, relationships, and motivations for every character you create.' ),
+						array( '📊', 'Beat Sheet Calculator', 'Generate page-perfect beat sheets for features, pilots, shorts, and novels.' ),
+						array( '⇩', 'Exportable One-Sheets', 'Generate investor-ready one-page project sheets in one click.' ),
+						array( '✨', 'AI Story Assistant', 'Analyze your logline, refine your arc, and identify gaps with an AI creative partner.', true ),
+					);
+					foreach ( $features as $f ) :
+						$soon = ! empty( $f[3] );
+						?>
+						<div class="lp-feature-card<?php echo $soon ? ' soon' : ''; ?>">
+							<div class="lp-feature-icon"><?php echo $f[0]; ?></div>
+							<div class="lp-feature-title-row"><h3><?php echo esc_html( $f[1] ); ?></h3><?php if ( $soon ) : ?><span class="lp-badge-soon">Soon</span><?php endif; ?></div>
+							<p><?php echo esc_html( $f[2] ); ?></p>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</section>
+
+		<section class="lp-section" id="lp-pricing">
+			<div class="lp-section-inner">
+				<p class="lp-eyebrow">Pricing</p>
+				<h2 class="lp-h2">Fair pricing for every stage of your career.</h2>
+				<p class="lp-section-sub">Start free. Upgrade when you're ready.</p>
+				<div class="lp-pricing-grid">
+					<?php foreach ( $plans as $plan ) : ?>
+						<div class="lp-pricing-card<?php echo 'pro' === $plan['id'] ? ' highlight' : ''; ?>">
+							<?php if ( 'pro' === $plan['id'] ) : ?><div class="lp-pricing-ribbon">Most Popular</div><?php endif; ?>
+							<div class="lp-pricing-name"><?php echo esc_html( $plan['name'] ); ?></div>
+							<div class="lp-pricing-amount"><span class="n">$<?php echo (int) $plan['price']; ?></span><?php if ( $plan['period'] ) : ?><span class="p"><?php echo esc_html( $plan['period'] ); ?></span><?php endif; ?></div>
+							<hr class="lp-pricing-rule">
+							<ul class="lp-pricing-features">
+								<?php foreach ( array_slice( $plan['features'], 0, 5 ) as $f ) : ?>
+									<li><?php echo esc_html( $f ); ?></li>
+								<?php endforeach; ?>
+							</ul>
+							<a class="lp-btn <?php echo 'pro' === $plan['id'] ? 'lp-btn-primary' : 'lp-btn-outline'; ?> lp-btn-sm" style="width:100%;justify-content:center" href="<?php echo esc_url( $signup_url ); ?>">
+								<?php echo 0 === (int) $plan['price'] ? 'Get Started' : 'Upgrade to ' . esc_html( $plan['name'] ); ?>
+							</a>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</section>
+
+		<footer class="lp-footer">
+			<div class="lp-footer-inner">
+				<div class="lp-footer-brand"><div class="lp-mark-icon">🎬</div>Banner Day Productions © <?php echo esc_html( gmdate( 'Y' ) ); ?></div>
+				<div class="lp-footer-links"><span>Privacy</span><span>Terms</span><span>Contact</span></div>
+			</div>
+		</footer>
+
+		</body>
+		</html>
+		<?php
+	}
+
+	/**
+	 * Matches the Figma Make source's Signup() component: a two-column
+	 * layout with sample-project social proof on the left, a profile-setup
+	 * form on the right. Deliberately NOT a real account-creation flow —
+	 * this is a single-user tool (real access stays admin-only via
+	 * wp-login.php) — so submitting just carries the typed name into the
+	 * sandboxed demo, matching the "nothing here is saved" pattern the
+	 * demo itself already uses.
+	 */
+	public static function render_signup() {
+		$demo_url = self::demo_url();
+		$home_url = self::home_url();
+
+		header( 'Content-Type: text/html; charset=utf-8' );
+		?>
+		<!doctype html>
+		<html lang="en">
+		<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+		<title>Create your account — Project Database</title>
+		<?php echo self::google_fonts_tag(); ?>
+		<link rel="stylesheet" href="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/css/homepage.css' ); ?>?v=<?php echo SPD_VERSION; ?>">
+		</head>
+		<body>
+		<div class="su-wrap">
+			<div class="su-left">
+				<div class="lp-mark"><div class="lp-mark-icon">🎬</div><div class="lp-mark-title">Project Database</div></div>
+				<div>
+					<h2>Every great story<br>starts with one line.</h2>
+					<p>Your creative command center awaits.</p>
+					<div class="su-sample-card">
+						<div class="top">🎬<span class="t">Neon Requiem</span><span class="spd-pill" style="font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(120,53,15,0.4);color:#fcd34d">Script</span></div>
+						<p>A retired detective in a rain-soaked neon city uncovers a conspiracy that threatens to erase the last traces of human memory from the digital grid.</p>
 					</div>
-					<div class="db-row" data-sc-in data-sc-stagger="90">
-						<div class="db-col">
-							<h3>Projects</h3>
-							<div class="db-item"><span class="name">Neon Requiem</span><span class="meta">Feature · Script · 78%</span></div>
-							<div class="db-item" style="margin-top:14px"><span class="name">The Glass Meridian</span><span class="meta">TV Series · Pitch · 45%</span></div>
-						</div>
-						<div class="db-col">
-							<h3>Franchises</h3>
-							<div class="db-item"><span class="name">The Meridian Universe</span><span class="meta">Active · Thriller, Sci-Fi, Noir</span></div>
-							<div class="db-item" style="margin-top:14px"><span class="name">Epoch Saga</span><span class="meta">Development · Sci-Fi, Fantasy</span></div>
-						</div>
-						<div class="db-col">
-							<h3>Characters</h3>
-							<div class="db-item"><span class="name">Detective Mara Voss</span><span class="meta">Protagonist · Neon Requiem</span></div>
-							<div class="db-item" style="margin-top:14px"><span class="name">The Architect</span><span class="meta">Antagonist · The Glass Meridian</span></div>
-						</div>
+					<div class="su-sample-card">
+						<div class="top">📺<span class="t">The Glass Meridian</span><span class="spd-pill" style="font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(124,45,18,0.4);color:#fdba74">Pitch</span></div>
+						<p>Six strangers connected by a single photograph discover they are living parallel lives across different timelines — and one of them is the killer.</p>
 					</div>
 				</div>
-			</section>
-
-			<!-- ACT 3 · Turn — THE PEAK. Beat sheet assembles live, driven by --sc-p.
-			     Heading and pills are static (visible the instant the section is
-			     on screen, no scroll-triggered fade); only the row-by-row build
-			     stays tied to scroll, since that live-build IS the feature being
-			     demonstrated. pin -->
-			<section id="beatsheet" data-sc-act="pin" data-sc-span="3.4" data-sc-drift="#0e0e12">
-				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center;">
-					<div class="beatsheet-panel">
-						<p class="sample-note">The real generator, not a mockup</p>
-						<h2 class="sc-display sc-display--md" style="margin:0 0 var(--sc-2)">Watch the beat sheet build itself.</h2>
-						<div class="beatsheet-head">
-							<span class="pill pill--accent">Feature Film · Save the Cat</span>
-							<span class="pill">110 pages</span>
+				<p class="su-trust">Trusted by screenwriters, novelists, and filmmakers worldwide.</p>
+			</div>
+			<div class="su-right">
+				<div class="su-form-wrap">
+					<a class="su-back" href="<?php echo esc_url( $home_url ); ?>">‹ Back to home</a>
+					<h2>Create your account</h2>
+					<p>Set up your creative workspace in under a minute.</p>
+					<form id="signupForm">
+						<div class="su-field-row">
+							<div class="su-field"><label>Full Name</label><input type="text" id="su-name" placeholder="Jordan Mercer"></div>
+							<div class="su-field"><label>Email</label><input type="email" placeholder="jordan@studio.com"></div>
 						</div>
-						<div class="beatsheet-table-scroll">
-							<table class="beat-table" id="beatTable" aria-live="polite"></table>
+						<div class="su-field"><label>Production Company</label><input type="text" placeholder="Meridian Films Inc."></div>
+						<div class="su-field"><label>Title / Role</label><input type="text" placeholder="Writer-Director"></div>
+						<div class="su-field">
+							<label>Primary Creative Type</label>
+							<div class="su-chip-row">
+								<?php foreach ( array( 'Screenwriter', 'Novelist', 'Filmmaker', 'Producer', 'Content Creator', 'Game Writer', 'Other' ) as $i => $type ) : ?>
+									<button type="button" class="su-type-chip<?php echo 0 === $i ? ' active' : ''; ?>"><?php echo esc_html( $type ); ?></button>
+								<?php endforeach; ?>
+							</div>
 						</div>
-					</div>
+						<button type="submit" class="lp-btn lp-btn-primary lp-btn-lg" style="width:100%;justify-content:center;margin-top:8px">Create Workspace →</button>
+						<p class="su-footnote">This is a sandboxed preview — nothing entered here is saved. <button type="button" id="su-signin-link">Already have an account? Sign in</button></p>
+					</form>
 				</div>
-			</section>
-
-			<!-- ACT 4 · Range — imports/exports, the practical edges. The card rail
-			     is a REAL horizontally-scrollable strip (native overflow-x, drag
-			     or swipe or shift+wheel to move it) rather than a vertical-scroll-
-			     driven pan, so it behaves like an ordinary side-scrolling shelf. -->
-			<section id="imports" class="sc-section" data-sc-act="flow" data-sc-drift="#0b0b0d">
-				<div class="sc-wrap">
-					<div class="sc-stack" data-sc-in style="margin-bottom:var(--sc-5)">
-						<h2 class="sc-display sc-display--md">Every file finds its place.</h2>
-						<p class="sc-body">Scripts, treatments, beat sheets, posters, research: imported once, attached to the right project.</p>
-					</div>
-				</div>
-				<div class="imports-rail" data-sc-in data-sc-stagger="60">
-					<article class="surface-card" data-sc-tilt="6"><div class="icon">📄</div><h3>Script</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.fdx, .pdf, .docx</p></article>
-					<article class="surface-card" data-sc-tilt="6"><div class="icon">📋</div><h3>Treatment</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.docx, .pdf</p></article>
-					<article class="surface-card" data-sc-tilt="6"><div class="icon">📊</div><h3>Beat Sheet</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.xlsx, .csv</p></article>
-					<article class="surface-card" data-sc-tilt="6"><div class="icon">🎬</div><h3>Poster</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.jpg, .png, .svg</p></article>
-					<article class="surface-card" data-sc-tilt="6"><div class="icon">📚</div><h3>Research</h3><p class="sc-body" style="font-size:var(--sc-t-sm)">.pdf, .docx</p></article>
-				</div>
-			</section>
-
-			<!-- ACT 5 · Commitment — real pricing (from SPD_REST_API::plans_data()),
-			     then an actual input. LAST element on the page. pin -->
-			<section id="pricing" data-sc-act="pin" data-sc-span="1.3" data-sc-drift="#08090a">
-				<div data-sc-stage class="sc-wrap spd-stage-flex" style="justify-content:center;">
-					<div data-sc-cue="0.05" style="width:100%">
-						<h2 class="sc-display sc-display--lg" style="margin:0 0 var(--sc-5)">Simple pricing. One action.</h2>
-						<div class="price-row">
-							<?php foreach ( $plans as $plan ) : ?>
-								<div class="surface-card price-card"<?php echo 'pro' === $plan['id'] ? ' style="border-color: var(--sc-accent)"' : ''; ?>>
-									<div class="stat-label"><?php echo esc_html( trim( explode( '—', $plan['name'] )[0] ) ); ?></div>
-									<div class="price-amount">$<span data-sc-count="0 <?php echo (int) $plan['price']; ?>" data-sc-count-at="0.1 0.35">0</span><?php echo esc_html( $plan['period'] ); ?></div>
-									<p class="sc-body" style="font-size:var(--sc-t-sm); margin-top:8px"><?php echo esc_html( implode( ', ', array_slice( $plan['features'], 0, 3 ) ) ); ?>.</p>
-								</div>
-							<?php endforeach; ?>
-						</div>
-						<form class="start-row" id="startForm">
-							<input type="text" id="startTitle" placeholder="Type your next project's title…" aria-label="Your next project's title">
-							<button type="submit" class="cta" data-sc-magnet="0.26" data-sc-rise="0">Start in the demo</button>
-						</form>
-					</div>
-					<footer style="margin-top:var(--sc-8); font-size:var(--sc-t-xs); color:var(--sc-ink-soft)">Project Database for Storytellers</footer>
-				</div>
-			</section>
-
-		</main>
-
-		<script src="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/js/scrollcraft-engine.js' ); ?>?v=<?php echo SPD_VERSION; ?>"></script>
-		<script>ScrollCraft.mount(document.body);</script>
-		<script>window.SPD_DEMO_URL = <?php echo wp_json_encode( $demo_url ); ?>;</script>
-		<script src="<?php echo esc_url( SPD_PLUGIN_URL . 'assets/js/homepage-scroll.js' ); ?>?v=<?php echo SPD_VERSION; ?>"></script>
+			</div>
+		</div>
+		<script>
+			document.querySelectorAll( '.su-type-chip' ).forEach( function ( btn ) {
+				btn.addEventListener( 'click', function () {
+					document.querySelectorAll( '.su-type-chip' ).forEach( function ( b ) { b.classList.remove( 'active' ); } );
+					btn.classList.add( 'active' );
+				} );
+			} );
+			document.getElementById( 'su-signin-link' ).addEventListener( 'click', function () {
+				window.location.href = <?php echo wp_json_encode( esc_url_raw( wp_login_url() ) ); ?>;
+			} );
+			document.getElementById( 'signupForm' ).addEventListener( 'submit', function ( e ) {
+				e.preventDefault();
+				var name = document.getElementById( 'su-name' ).value.trim();
+				var url = <?php echo wp_json_encode( $demo_url ); ?> + ( name ? '?start_title=' + encodeURIComponent( name + '’s First Project' ) : '' );
+				window.location.href = url;
+			} );
+		</script>
 		</body>
 		</html>
 		<?php
@@ -283,13 +365,14 @@ class SPD_Public_Site {
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Demo: Project Database</title>
+		<?php echo self::google_fonts_tag(); ?>
 		<?php echo self::demo_asset_tags(); ?>
 		<style>
-			.spd-demo-topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #0e0e10; border-bottom: 1px solid #2a2a2e; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10002; color: #f2f0ec; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; }
-			.spd-demo-topbar a { color: #e3b077; text-decoration: none; font-weight: 600; }
-			.spd-demo-topbar span { color: #9a9a9f; }
+			.spd-demo-topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #0D0D12; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 10002; color: #F2F2F4; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; }
+			.spd-demo-topbar a { color: #D4A96A; text-decoration: none; font-weight: 600; }
+			.spd-demo-topbar span { color: #72727E; }
 			#spd-app.spd-app { top: 48px; }
-			html, body { background: #0b0b0d; margin: 0; }
+			html, body { background: #0B0B0F; margin: 0; }
 		</style>
 		</head>
 		<body>
